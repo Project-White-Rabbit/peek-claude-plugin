@@ -5,6 +5,7 @@ interface HookInput {
   transcript_path: string
   cwd: string
   hook_event_name: string
+  prompt?: string
 }
 
 interface TranscriptEntry {

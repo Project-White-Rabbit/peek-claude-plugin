@@ -28,7 +28,7 @@ async function main() {
 
   process.env.PEEK_CWD = input.cwd
 
-  const userMessage = getLatestUserMessage(input.transcript_path)
+  const userMessage = input.prompt ?? getLatestUserMessage(input.transcript_path)
   if (!userMessage) {
     return
   }
