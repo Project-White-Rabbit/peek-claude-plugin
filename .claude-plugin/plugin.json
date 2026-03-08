@@ -1,0 +1,12 @@
+{
+  "name": "peek",
+  "description": "Deep memory for Claude Code — automatically learns your preferences and injects relevant context",
+  "version": "0.1.0",
+  "author": {
+    "name": "Peek"
+  },
+  "homepage": "https://github.com/Project-White-Rabbit/peek-claude-plugin",
+  "repository": "https://github.com/Project-White-Rabbit/peek-claude-plugin",
+  "license": "MIT",
+  "keywords": ["memory", "context", "personalization", "hooks"]
+}
