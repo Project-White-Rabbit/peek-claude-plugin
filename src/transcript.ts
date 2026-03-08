@@ -79,39 +79,6 @@ export function getRecentContext(
   }
 }
 
-export function getLatestUserMessage(transcriptPath: string): string | null {
-  try {
-    const content = fs.readFileSync(transcriptPath, "utf-8")
-    const lines = content.trim().split("\n")
-
-    for (let i = lines.length - 1; i >= 0; i--) {
-      try {
-        const entry: TranscriptEntry = JSON.parse(lines[i])
-        if (entry.message?.role !== "user") {
-          continue
-        }
-
-        if (typeof entry.message.content === "string") {
-          return entry.message.content
-        }
-
-        if (Array.isArray(entry.message.content)) {
-          const text = entry.message.content
-            .filter((block) => block.type === "text" && block.text)
-            .map((block) => block.text)
-            .join("\n")
-          if (text.trim()) {
-            return text
-          }
-        }
-      } catch {}
-    }
-  } catch {
-    // ignore
-  }
-  return null
-}
-
 export function getRecentToolNames(transcriptPath: string): string[] {
   try {
     const content = fs.readFileSync(transcriptPath, "utf-8")
@@ -148,4 +115,37 @@ export function getRecentToolNames(transcriptPath: string): string[] {
   } catch {
     return []
   }
+}
+
+export function getLatestUserMessage(transcriptPath: string): string | null {
+  try {
+    const content = fs.readFileSync(transcriptPath, "utf-8")
+    const lines = content.trim().split("\n")
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        const entry: TranscriptEntry = JSON.parse(lines[i])
+        if (entry.message?.role !== "user") {
+          continue
+        }
+
+        if (typeof entry.message.content === "string") {
+          return entry.message.content
+        }
+
+        if (Array.isArray(entry.message.content)) {
+          const text = entry.message.content
+            .filter((block) => block.type === "text" && block.text)
+            .map((block) => block.text)
+            .join("\n")
+          if (text.trim()) {
+            return text
+          }
+        }
+      } catch {}
+    }
+  } catch {
+    // ignore
+  }
+  return null
 }
