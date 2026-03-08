@@ -1,7 +1,7 @@
 import { apiCall } from "../api.js";
 import { writeCache } from "../cache.js";
 import { hasCredentials } from "../config.js";
-import { getLatestUserMessage, getRecentContext, parseHookInput, } from "../transcript.js";
+import { getLatestUserMessage, getRecentContext, getRecentToolNames, parseHookInput, } from "../transcript.js";
 async function main() {
     if (!hasCredentials()) {
         return;
@@ -16,9 +16,11 @@ async function main() {
         return;
     }
     const recentContext = getRecentContext(input.transcript_path, 10);
+    const toolsUsed = getRecentToolNames(input.transcript_path);
     const result = await apiCall("/api/plugin/prompt", {
         prompt: userMessage,
         context: recentContext,
+        toolsUsed,
         sessionId: input.session_id,
         cwd: input.cwd,
     });

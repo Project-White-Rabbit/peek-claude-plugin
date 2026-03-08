@@ -4,6 +4,7 @@ import { hasCredentials } from "../config.js"
 import {
   getLatestUserMessage,
   getRecentContext,
+  getRecentToolNames,
   parseHookInput,
 } from "../transcript.js"
 
@@ -34,10 +35,12 @@ async function main() {
   }
 
   const recentContext = getRecentContext(input.transcript_path, 10)
+  const toolsUsed = getRecentToolNames(input.transcript_path)
 
   const result = await apiCall<PromptResponse>("/api/plugin/prompt", {
     prompt: userMessage,
     context: recentContext,
+    toolsUsed,
     sessionId: input.session_id,
     cwd: input.cwd,
   })

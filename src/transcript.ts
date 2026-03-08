@@ -8,12 +8,18 @@ interface HookInput {
   prompt?: string
 }
 
+interface ContentBlock {
+  type: string
+  text?: string
+  name?: string
+}
+
 interface TranscriptEntry {
   type?: string
   timestamp?: string
   message?: {
     role?: string
-    content?: string | Array<{ type: string; text?: string }>
+    content?: string | ContentBlock[]
   }
 }
 
@@ -104,4 +110,42 @@ export function getLatestUserMessage(transcriptPath: string): string | null {
     // ignore
   }
   return null
+}
+
+export function getRecentToolNames(transcriptPath: string): string[] {
+  try {
+    const content = fs.readFileSync(transcriptPath, "utf-8")
+    const lines = content.trim().split("\n")
+
+    const toolNames: string[] = []
+
+    // Walk backwards to find the most recent assistant turn's tool_use blocks.
+    // Stop when we hit a user message after finding assistant content.
+    let foundAssistant = false
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        const entry: TranscriptEntry = JSON.parse(lines[i])
+        if (!entry.message?.role || !entry.message?.content) {
+          continue
+        }
+
+        if (entry.message.role === "user" && foundAssistant) {
+          break
+        }
+
+        if (entry.message.role === "assistant" && Array.isArray(entry.message.content)) {
+          foundAssistant = true
+          for (const block of entry.message.content) {
+            if (block.type === "tool_use" && block.name) {
+              toolNames.push(block.name)
+            }
+          }
+        }
+      } catch {}
+    }
+
+    return toolNames
+  } catch {
+    return []
+  }
 }
