@@ -6,7 +6,7 @@ const CACHE_DIR = path.join(os.homedir(), ".config", "peek")
 const CACHE_FILE = path.join(CACHE_DIR, "memory-cache.json")
 
 export interface CachedMemories {
-  memories: Array<{ summary: string; category?: string; score?: number }>
+  memories: Array<{ content: string; category?: string; score?: number }>
   updatedAt: string
 }
 

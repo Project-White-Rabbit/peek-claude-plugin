@@ -1,7 +1,7 @@
 import { apiCall } from "../api.js";
 import { readCache, writeCache } from "../cache.js";
 import { hasCredentials } from "../config.js";
-import { getLatestUserMessage, parseHookInput } from "../transcript.js";
+import { getLatestUserMessage, getRecentContext, parseHookInput, } from "../transcript.js";
 // Sync hook: queries for fresh memories, falls back to cache on timeout.
 // Outputs memories to stdout for context injection.
 const TIMEOUT_MS = 2000;
@@ -11,7 +11,7 @@ function formatMemories(memories) {
     }
     const lines = memories.map((m) => {
         const cat = m.category ? ` [${m.category}]` : "";
-        return `- ${m.summary}${cat}`;
+        return `- ${m.content}${cat}`;
     });
     return [
         "<peek-memory>",
@@ -35,7 +35,8 @@ async function main() {
     if (!userMessage) {
         return;
     }
-    const result = await apiCall("/api/plugin/memories/search", { query: userMessage }, { timeoutMs: TIMEOUT_MS });
+    const recentContext = getRecentContext(input.transcript_path, 6);
+    const result = await apiCall("/api/plugin/memories/search", { query: userMessage, recentContext }, { timeoutMs: TIMEOUT_MS });
     if (result.ok) {
         writeCache(result.data.memories);
         const output = formatMemories(result.data.memories);

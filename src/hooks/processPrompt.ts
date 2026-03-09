@@ -12,9 +12,9 @@ import {
 // Server analyzes for dissatisfaction, saves memories, returns fresh memories for cache.
 
 interface PromptResponse {
-  memories: Array<{ summary: string; category?: string; score?: number }>
+  memories: Array<{ content: string; category?: string; score?: number }>
   memoryCount: number
-  savedMemory: { id: string; summary: string } | null
+  savedMemory: { id: string; content: string } | null
 }
 
 async function main() {

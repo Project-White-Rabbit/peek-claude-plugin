@@ -1,7 +1,11 @@
 import { apiCall } from "../api.js"
 import { readCache, writeCache } from "../cache.js"
 import { hasCredentials } from "../config.js"
-import { getLatestUserMessage, parseHookInput } from "../transcript.js"
+import {
+  getLatestUserMessage,
+  getRecentContext,
+  parseHookInput,
+} from "../transcript.js"
 
 // Sync hook: queries for fresh memories, falls back to cache on timeout.
 // Outputs memories to stdout for context injection.
@@ -9,7 +13,7 @@ import { getLatestUserMessage, parseHookInput } from "../transcript.js"
 const TIMEOUT_MS = 2000
 
 interface SearchResponse {
-  memories: Array<{ summary: string; category?: string; score?: number }>
+  memories: Array<{ content: string; category?: string; score?: number }>
   memoryCount: number
 }
 
@@ -20,7 +24,7 @@ function formatMemories(memories: SearchResponse["memories"]): string {
 
   const lines = memories.map((m) => {
     const cat = m.category ? ` [${m.category}]` : ""
-    return `- ${m.summary}${cat}`
+    return `- ${m.content}${cat}`
   })
 
   return [
@@ -45,14 +49,17 @@ async function main() {
   // Set cwd for config resolution
   process.env.PEEK_CWD = input.cwd
 
-  const userMessage = input.prompt ?? getLatestUserMessage(input.transcript_path)
+  const userMessage =
+    input.prompt ?? getLatestUserMessage(input.transcript_path)
   if (!userMessage) {
     return
   }
 
+  const recentContext = getRecentContext(input.transcript_path, 6)
+
   const result = await apiCall<SearchResponse>(
     "/api/plugin/memories/search",
-    { query: userMessage },
+    { query: userMessage, recentContext },
     { timeoutMs: TIMEOUT_MS },
   )
 
