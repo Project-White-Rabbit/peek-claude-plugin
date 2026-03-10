@@ -28,11 +28,11 @@ function formatMemories(memories: SearchResponse["memories"]): string {
   })
 
   return [
-    "<peek-memory>",
-    "The following are relevant memories about this user from previous sessions:",
-    "",
+    "Relevant memories about the user from the Peek product.",
+    "For any memories that are behavioral corrections, preferences, or suggestions YOU MUST FOLLOW THEM:",
+    "<memory>",
     ...lines,
-    "</peek-memory>",
+    "</memory>",
   ].join("\n")
 }
 

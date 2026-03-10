@@ -1,13 +1,13 @@
 {
   "name": "peek-claude-plugin",
-  "version": "0.1.1",
-  "description": "Deep memory for Claude Code",
+  "version": "0.1.2",
+  "description": "Behavioral memory for Claude Code",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
   },
-  "keywords": ["claude-code", "memory", "context"],
+  "keywords": ["claude-code", "memory", "context", "steering", "behavioral", "personalization"],
   "author": "Peek",
   "license": "MIT",
   "engines": {
