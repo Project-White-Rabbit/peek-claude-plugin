@@ -44,7 +44,9 @@ async function main() {
 
   if (isNewer(latest, CURRENT_VERSION)) {
     process.stdout.write(
-      `[Peek] Update available: v${CURRENT_VERSION} → v${latest}. Run: claude plugin update peek\n`,
+      `[Peek] Update available: v${CURRENT_VERSION} → v${latest}.\n` +
+        `       Update: claude plugin update peek@peek (or /plugin → Installed → peek → Update)\n` +
+        `       Auto-update: /plugin → Marketplaces → peek → Enable auto-update\n`,
     )
   }
 }
