@@ -1,11 +1,7 @@
 import { apiCall } from "../api.js"
 import { readCache, writeCache } from "../cache.js"
 import { type PeekConfig, getConfig, hasCredentials } from "../config.js"
-import {
-  getLatestUserMessage,
-  getRecentContext,
-  parseHookInput,
-} from "../transcript.js"
+import { buildConversationContext, parseHookInput } from "../transcript.js"
 
 // Sync hook: queries for fresh memories, falls back to cache on timeout.
 // Outputs memories to stdout for context injection.
@@ -102,17 +98,14 @@ async function main() {
 
   const config = getConfig()
 
-  const userMessage =
-    input.prompt ?? getLatestUserMessage(input.transcript_path)
-  if (!userMessage) {
+  const context = buildConversationContext(input, { contextEntries: 6 })
+  if (!context) {
     return
   }
 
-  const recentContext = getRecentContext(input.transcript_path, 6)
-
   const result = await apiCall<SearchResponse>(
     "/api/plugin/memories/search",
-    { query: userMessage, recentContext },
+    context,
     { timeoutMs: TIMEOUT_MS },
   )
 

@@ -1,7 +1,7 @@
 import { apiCall } from "../api.js";
 import { readCache, writeCache } from "../cache.js";
 import { getConfig, hasCredentials } from "../config.js";
-import { getLatestUserMessage, getRecentContext, parseHookInput, } from "../transcript.js";
+import { buildConversationContext, parseHookInput } from "../transcript.js";
 // Sync hook: queries for fresh memories, falls back to cache on timeout.
 // Outputs memories to stdout for context injection.
 const TIMEOUT_MS = 2000;
@@ -66,12 +66,11 @@ async function main() {
     // Set cwd for config resolution
     process.env.PEEK_CWD = input.cwd;
     const config = getConfig();
-    const userMessage = input.prompt ?? getLatestUserMessage(input.transcript_path);
-    if (!userMessage) {
+    const context = buildConversationContext(input, { contextEntries: 6 });
+    if (!context) {
         return;
     }
-    const recentContext = getRecentContext(input.transcript_path, 6);
-    const result = await apiCall("/api/plugin/memories/search", { query: userMessage, recentContext }, { timeoutMs: TIMEOUT_MS });
+    const result = await apiCall("/api/plugin/memories/search", context, { timeoutMs: TIMEOUT_MS });
     if (result.ok) {
         writeCache(result.data.memories);
         emitOutput(result.data.memories, false, config);

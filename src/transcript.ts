@@ -8,6 +8,36 @@ interface HookInput {
   prompt?: string
 }
 
+export interface ConversationContext {
+  prompt: string
+  recentContext: string[]
+  toolsUsed: string[]
+  sessionId: string
+  cwd: string
+}
+
+export function buildConversationContext(
+  input: HookInput,
+  options?: { contextEntries?: number },
+): ConversationContext | null {
+  const prompt = input.prompt ?? getLatestUserMessage(input.transcript_path)
+  if (!prompt) {
+    return null
+  }
+
+  const contextEntries = options?.contextEntries ?? 10
+  const recentContext = getRecentContext(input.transcript_path, contextEntries)
+  const toolsUsed = getRecentToolNames(input.transcript_path)
+
+  return {
+    prompt,
+    recentContext,
+    toolsUsed,
+    sessionId: input.session_id,
+    cwd: input.cwd,
+  }
+}
+
 interface ContentBlock {
   type: string
   text?: string

@@ -1,4 +1,20 @@
 import fs from "node:fs";
+export function buildConversationContext(input, options) {
+    const prompt = input.prompt ?? getLatestUserMessage(input.transcript_path);
+    if (!prompt) {
+        return null;
+    }
+    const contextEntries = options?.contextEntries ?? 10;
+    const recentContext = getRecentContext(input.transcript_path, contextEntries);
+    const toolsUsed = getRecentToolNames(input.transcript_path);
+    return {
+        prompt,
+        recentContext,
+        toolsUsed,
+        sessionId: input.session_id,
+        cwd: input.cwd,
+    };
+}
 export function parseHookInput() {
     try {
         const stdin = fs.readFileSync(0, "utf-8");
