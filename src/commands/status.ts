@@ -1,4 +1,5 @@
 import { getConfig, hasCredentials } from "../config.js"
+import { getVersion } from "../version.js"
 
 async function main() {
   const config = getConfig()
@@ -20,6 +21,7 @@ async function main() {
         headers: {
           Authorization: `Bearer ${config.apiKey}`,
           "Content-Type": "application/json",
+          "X-Plugin-Version": getVersion(),
         },
         body: JSON.stringify({ query: "test" }),
         signal: AbortSignal.timeout(5000),

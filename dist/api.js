@@ -1,4 +1,5 @@
 import { getConfig } from "./config.js";
+import { getVersion } from "./version.js";
 export async function apiCall(path, body, options) {
     const config = getConfig();
     if (!config.apiKey) {
@@ -14,6 +15,7 @@ export async function apiCall(path, body, options) {
             headers: {
                 Authorization: `Bearer ${config.apiKey}`,
                 "Content-Type": "application/json",
+                "X-Plugin-Version": getVersion(),
             },
             body: JSON.stringify(body),
             signal: controller.signal,

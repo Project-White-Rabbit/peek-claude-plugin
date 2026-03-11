@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-update",
-            "async": true
+            "async": false
           }
         ]
       }

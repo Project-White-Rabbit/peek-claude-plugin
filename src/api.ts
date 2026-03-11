@@ -1,4 +1,5 @@
 import { getConfig } from "./config.js"
+import { getVersion } from "./version.js"
 
 type ApiResponse<T> = { ok: true; data: T } | { ok: false; error: string }
 
@@ -23,6 +24,7 @@ export async function apiCall<T>(
       headers: {
         Authorization: `Bearer ${config.apiKey}`,
         "Content-Type": "application/json",
+        "X-Plugin-Version": getVersion(),
       },
       body: JSON.stringify(body),
       signal: controller.signal,

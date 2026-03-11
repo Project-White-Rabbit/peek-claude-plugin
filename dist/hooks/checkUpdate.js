@@ -1,9 +1,7 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { getVersion } from "../version.js";
 // Async SessionStart hook: checks if a newer version is available on GitHub.
 // If so, outputs a message to stdout so the user sees it.
-const CURRENT_VERSION = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "../../package.json"), "utf-8")).version;
+const CURRENT_VERSION = getVersion();
 const REPO = "Project-White-Rabbit/peek-claude-plugin";
 async function getLatestVersion() {
     try {
