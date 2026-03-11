@@ -1,10 +1,14 @@
 import { getConfig, hasCredentials } from "../config.js"
-import { getVersion } from "../version.js"
+import { checkForUpdate, formatUpdateMessage } from "../updates.js"
 
 async function main() {
   const config = getConfig()
+  const { current, latest, updateAvailable } = await checkForUpdate()
 
   console.log(`Service URL: ${config.serviceUrl}`)
+  const versionSuffix =
+    updateAvailable && latest ? ` (${formatUpdateMessage(current, latest)})` : ""
+  console.log(`Version: v${current}${versionSuffix}`)
   console.log(`Authenticated: ${hasCredentials() ? "yes" : "no"}`)
 
   if (!hasCredentials()) {
@@ -21,7 +25,7 @@ async function main() {
         headers: {
           Authorization: `Bearer ${config.apiKey}`,
           "Content-Type": "application/json",
-          "X-Plugin-Version": getVersion(),
+          "X-Plugin-Version": current,
         },
         body: JSON.stringify({ query: "test" }),
         signal: AbortSignal.timeout(5000),
@@ -38,6 +42,7 @@ async function main() {
       `Connection: unreachable (${err instanceof Error ? err.message : String(err)})`,
     )
   }
+
 }
 
 main().catch((err) => {
