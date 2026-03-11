@@ -51,5 +51,5 @@ export function formatUpdateMessage(
   current: string,
   latest: string,
 ): string {
-  return `update → v${latest}. Run "claude plugin update peek@peek" to update.`
+  return `v${latest} available — /plugin → update marketplace, then update plugin`
 }

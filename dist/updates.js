@@ -34,5 +34,5 @@ export async function checkForUpdate() {
     };
 }
 export function formatUpdateMessage(current, latest) {
-    return `update → v${latest}. Run "claude plugin update peek@peek" to update.`;
+    return `v${latest} available — /plugin → update marketplace, then update plugin`;
 }
