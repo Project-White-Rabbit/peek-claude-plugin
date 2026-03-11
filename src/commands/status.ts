@@ -9,14 +9,14 @@ async function main() {
   const versionSuffix =
     updateAvailable && latest ? ` (${formatUpdateMessage(current, latest)})` : ""
   console.log(`Version: v${current}${versionSuffix}`)
-  console.log(`Authenticated: ${hasCredentials() ? "yes" : "no"}`)
 
   if (!hasCredentials()) {
+    console.log("Status: not authenticated")
     console.log("\nRun /peek:login to authenticate.")
     return
   }
 
-  // Ping the API to check connectivity
+  let connectionStatus = "authenticated"
   try {
     const response = await fetch(
       `${config.serviceUrl}/api/plugin/memories/search`,
@@ -32,16 +32,15 @@ async function main() {
       },
     )
 
-    if (response.ok) {
-      console.log("Connection: healthy")
-    } else {
-      console.log(`Connection: error (${response.status})`)
+    if (!response.ok) {
+      connectionStatus = `authenticated, connection error (${response.status})`
     }
   } catch (err) {
-    console.log(
-      `Connection: unreachable (${err instanceof Error ? err.message : String(err)})`,
-    )
+    connectionStatus = `authenticated, unreachable (${err instanceof Error ? err.message : String(err)})`
   }
+
+  console.log(`Status: ${connectionStatus}`)
+  console.log(`Logging: ${config.showStatusLine ? "default" : "hidden"}`)
 
 }
 

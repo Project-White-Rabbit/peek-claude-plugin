@@ -1,6 +1,6 @@
 import { apiCall } from "../api.js"
 import { readCache, writeCache } from "../cache.js"
-import { hasCredentials } from "../config.js"
+import { type PeekConfig, getConfig, hasCredentials } from "../config.js"
 import {
   getLatestUserMessage,
   getRecentContext,
@@ -36,6 +36,57 @@ function formatMemories(memories: SearchResponse["memories"]): string {
   ].join("\n")
 }
 
+function formatStatusLine(
+  memories: SearchResponse["memories"],
+  fromCache: boolean,
+  verbose: boolean,
+): string | null {
+  if (memories.length === 0) {
+    return null
+  }
+
+  const categories = [
+    ...new Set(memories.map((m) => m.category).filter(Boolean)),
+  ]
+  const categoryStr =
+    categories.length > 0 ? ` [${categories.join(", ")}]` : ""
+  const cacheStr = fromCache ? " (cached)" : ""
+
+  const parts = [
+    `[Peek] ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}`,
+  ]
+
+  if (verbose) {
+    for (const m of memories) {
+      const cat = m.category ? ` [${m.category}]` : ""
+      parts.push(`  - ${m.content}${cat}`)
+    }
+  }
+
+  return parts.join("\n")
+}
+
+function emitOutput(
+  memories: SearchResponse["memories"],
+  fromCache: boolean,
+  config: PeekConfig,
+): void {
+  const context = formatMemories(memories)
+  if (!context) {
+    return
+  }
+
+  const statusLine = config.showStatusLine
+    ? formatStatusLine(memories, fromCache, config.verbose)
+    : null
+
+  const output: Record<string, string> = { additionalContext: context }
+  if (statusLine) {
+    output.systemMessage = statusLine
+  }
+  process.stdout.write(JSON.stringify(output))
+}
+
 async function main() {
   if (!hasCredentials()) {
     return
@@ -48,6 +99,8 @@ async function main() {
 
   // Set cwd for config resolution
   process.env.PEEK_CWD = input.cwd
+
+  const config = getConfig()
 
   const userMessage =
     input.prompt ?? getLatestUserMessage(input.transcript_path)
@@ -65,10 +118,7 @@ async function main() {
 
   if (result.ok) {
     writeCache(result.data.memories)
-    const output = formatMemories(result.data.memories)
-    if (output) {
-      process.stdout.write(output)
-    }
+    emitOutput(result.data.memories, false, config)
     return
   }
 
@@ -76,10 +126,7 @@ async function main() {
   if (result.error === "timeout" || result.error.startsWith("API error")) {
     const cached = readCache()
     if (cached && cached.memories.length > 0) {
-      const output = formatMemories(cached.memories)
-      if (output) {
-        process.stdout.write(output)
-      }
+      emitOutput(cached.memories, true, config)
     }
   }
 }

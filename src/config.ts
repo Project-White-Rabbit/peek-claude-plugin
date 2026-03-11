@@ -5,6 +5,8 @@ import path from "node:path"
 export interface PeekConfig {
   serviceUrl: string
   apiKey: string | null
+  showStatusLine: boolean
+  verbose: boolean
 }
 
 const DEFAULT_SERVICE_URL = "https://www.gopeek.ai"
@@ -56,11 +58,70 @@ function getApiKey(): string | null {
   return null
 }
 
+function getShowStatusLine(): boolean {
+  const globalConfig = readJsonFile(CONFIG_FILE)
+  if (globalConfig?.showStatusLine === false) {
+    return false
+  }
+  return true
+}
+
+function getVerbose(): boolean {
+  if (process.env.PEEK_VERBOSE === "true" || process.env.PEEK_VERBOSE === "1") {
+    return true
+  }
+  const globalConfig = readJsonFile(CONFIG_FILE)
+  if (globalConfig?.verbose === true) {
+    return true
+  }
+  return false
+}
+
 export function getConfig(): PeekConfig {
   return {
     serviceUrl: getServiceUrl(),
     apiKey: getApiKey(),
+    showStatusLine: getShowStatusLine(),
+    verbose: getVerbose(),
   }
+}
+
+export function setShowStatusLine(value: boolean): void {
+  fs.mkdirSync(CONFIG_DIR, { recursive: true })
+
+  const existing = readJsonFile(CONFIG_FILE) ?? {}
+  existing.showStatusLine = value
+  fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
+}
+
+export function setVerbose(value: boolean): void {
+  fs.mkdirSync(CONFIG_DIR, { recursive: true })
+
+  const existing = readJsonFile(CONFIG_FILE) ?? {}
+  existing.verbose = value
+  fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
+}
+
+export type LoggingLevel = "verbose" | "default" | "none"
+
+export function setLoggingLevel(level: LoggingLevel): void {
+  fs.mkdirSync(CONFIG_DIR, { recursive: true })
+
+  const existing = readJsonFile(CONFIG_FILE) ?? {}
+  existing.showStatusLine = level !== "none"
+  existing.verbose = level === "verbose"
+  fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
+}
+
+export function getLoggingLevel(): LoggingLevel {
+  const config = readJsonFile(CONFIG_FILE)
+  if (config?.showStatusLine === false) {
+    return "none"
+  }
+  if (config?.verbose === true) {
+    return "verbose"
+  }
+  return "default"
 }
 
 export function saveCredentials(apiKey: string): void {

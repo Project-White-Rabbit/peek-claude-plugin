@@ -41,11 +41,59 @@ function getApiKey() {
     }
     return null;
 }
+function getShowStatusLine() {
+    const globalConfig = readJsonFile(CONFIG_FILE);
+    if (globalConfig?.showStatusLine === false) {
+        return false;
+    }
+    return true;
+}
+function getVerbose() {
+    if (process.env.PEEK_VERBOSE === "true" || process.env.PEEK_VERBOSE === "1") {
+        return true;
+    }
+    const globalConfig = readJsonFile(CONFIG_FILE);
+    if (globalConfig?.verbose === true) {
+        return true;
+    }
+    return false;
+}
 export function getConfig() {
     return {
         serviceUrl: getServiceUrl(),
         apiKey: getApiKey(),
+        showStatusLine: getShowStatusLine(),
+        verbose: getVerbose(),
     };
+}
+export function setShowStatusLine(value) {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    const existing = readJsonFile(CONFIG_FILE) ?? {};
+    existing.showStatusLine = value;
+    fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`);
+}
+export function setVerbose(value) {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    const existing = readJsonFile(CONFIG_FILE) ?? {};
+    existing.verbose = value;
+    fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`);
+}
+export function setLoggingLevel(level) {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    const existing = readJsonFile(CONFIG_FILE) ?? {};
+    existing.showStatusLine = level !== "none";
+    existing.verbose = level === "verbose";
+    fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`);
+}
+export function getLoggingLevel() {
+    const config = readJsonFile(CONFIG_FILE);
+    if (config?.showStatusLine === false) {
+        return "none";
+    }
+    if (config?.verbose === true) {
+        return "verbose";
+    }
+    return "default";
 }
 export function saveCredentials(apiKey) {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });
