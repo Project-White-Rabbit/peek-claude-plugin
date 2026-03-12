@@ -10,6 +10,16 @@
             "async": false
           }
         ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-compaction",
+            "async": false
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

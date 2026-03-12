@@ -11,6 +11,7 @@ const TIMEOUT_MS = 2000
 interface SearchResponse {
   memories: Array<{ content: string; category?: string; score?: number }>
   memoryCount: number
+  totalMemoryCount?: number
 }
 
 function formatMemories(memories: SearchResponse["memories"]): string {
@@ -34,10 +35,12 @@ function formatMemories(memories: SearchResponse["memories"]): string {
 
 function formatStatusLine(
   memories: SearchResponse["memories"],
-  fromCache: boolean,
-  verbose: boolean,
+  opts: { fromCache: boolean; verbose: boolean; totalMemoryCount?: number },
 ): string | null {
-  if (memories.length === 0) {
+  const alreadyInContext =
+    opts.totalMemoryCount != null ? opts.totalMemoryCount - memories.length : 0
+
+  if (memories.length === 0 && alreadyInContext === 0) {
     return null
   }
 
@@ -46,13 +49,17 @@ function formatStatusLine(
   ]
   const categoryStr =
     categories.length > 0 ? ` [${categories.join(", ")}]` : ""
-  const cacheStr = fromCache ? " (cached)" : ""
+  const cacheStr = opts.fromCache ? " (cached)" : ""
+  const contextStr =
+    alreadyInContext > 0
+      ? ` (${alreadyInContext} already in context)`
+      : ""
 
   const parts = [
-    `[Peek] ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}`,
+    `[Peek] ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}${contextStr}`,
   ]
 
-  if (verbose) {
+  if (opts.verbose) {
     for (const m of memories) {
       const cat = m.category ? ` [${m.category}]` : ""
       parts.push(`  - ${m.content}${cat}`)
@@ -64,23 +71,30 @@ function formatStatusLine(
 
 function emitOutput(
   memories: SearchResponse["memories"],
-  fromCache: boolean,
+  opts: { fromCache: boolean; totalMemoryCount?: number },
   config: PeekConfig,
 ): void {
-  const context = formatMemories(memories)
-  if (!context) {
-    return
-  }
-
   const statusLine = config.showStatusLine
-    ? formatStatusLine(memories, fromCache, config.verbose)
+    ? formatStatusLine(memories, {
+        fromCache: opts.fromCache,
+        verbose: config.verbose,
+        totalMemoryCount: opts.totalMemoryCount,
+      })
     : null
 
-  const output: Record<string, string> = { additionalContext: context }
+  const context = formatMemories(memories)
+
+  const output: Record<string, string> = {}
+  if (context) {
+    output.additionalContext = context
+  }
   if (statusLine) {
     output.systemMessage = statusLine
   }
-  process.stdout.write(JSON.stringify(output))
+
+  if (Object.keys(output).length > 0) {
+    process.stdout.write(JSON.stringify(output))
+  }
 }
 
 async function main() {
@@ -111,7 +125,11 @@ async function main() {
 
   if (result.ok) {
     writeCache(result.data.memories)
-    emitOutput(result.data.memories, false, config)
+    emitOutput(
+      result.data.memories,
+      { fromCache: false, totalMemoryCount: result.data.totalMemoryCount },
+      config,
+    )
     return
   }
 
@@ -119,7 +137,7 @@ async function main() {
   if (result.error === "timeout" || result.error.startsWith("API error")) {
     const cached = readCache()
     if (cached && cached.memories.length > 0) {
-      emitOutput(cached.memories, true, config)
+      emitOutput(cached.memories, { fromCache: true }, config)
     }
   }
 }

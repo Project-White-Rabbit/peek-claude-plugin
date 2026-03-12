@@ -21,19 +21,23 @@ function formatMemories(memories) {
         "</memory>",
     ].join("\n");
 }
-function formatStatusLine(memories, fromCache, verbose) {
-    if (memories.length === 0) {
+function formatStatusLine(memories, opts) {
+    const alreadyInContext = opts.totalMemoryCount != null ? opts.totalMemoryCount - memories.length : 0;
+    if (memories.length === 0 && alreadyInContext === 0) {
         return null;
     }
     const categories = [
         ...new Set(memories.map((m) => m.category).filter(Boolean)),
     ];
     const categoryStr = categories.length > 0 ? ` [${categories.join(", ")}]` : "";
-    const cacheStr = fromCache ? " (cached)" : "";
+    const cacheStr = opts.fromCache ? " (cached)" : "";
+    const contextStr = alreadyInContext > 0
+        ? ` (${alreadyInContext} already in context)`
+        : "";
     const parts = [
-        `[Peek] ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}`,
+        `[Peek] ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}${contextStr}`,
     ];
-    if (verbose) {
+    if (opts.verbose) {
         for (const m of memories) {
             const cat = m.category ? ` [${m.category}]` : "";
             parts.push(`  - ${m.content}${cat}`);
@@ -41,19 +45,25 @@ function formatStatusLine(memories, fromCache, verbose) {
     }
     return parts.join("\n");
 }
-function emitOutput(memories, fromCache, config) {
-    const context = formatMemories(memories);
-    if (!context) {
-        return;
-    }
+function emitOutput(memories, opts, config) {
     const statusLine = config.showStatusLine
-        ? formatStatusLine(memories, fromCache, config.verbose)
+        ? formatStatusLine(memories, {
+            fromCache: opts.fromCache,
+            verbose: config.verbose,
+            totalMemoryCount: opts.totalMemoryCount,
+        })
         : null;
-    const output = { additionalContext: context };
+    const context = formatMemories(memories);
+    const output = {};
+    if (context) {
+        output.additionalContext = context;
+    }
     if (statusLine) {
         output.systemMessage = statusLine;
     }
-    process.stdout.write(JSON.stringify(output));
+    if (Object.keys(output).length > 0) {
+        process.stdout.write(JSON.stringify(output));
+    }
 }
 async function main() {
     if (!hasCredentials()) {
@@ -73,14 +83,14 @@ async function main() {
     const result = await apiCall("/api/plugin/memories/search", context, { timeoutMs: TIMEOUT_MS });
     if (result.ok) {
         writeCache(result.data.memories);
-        emitOutput(result.data.memories, false, config);
+        emitOutput(result.data.memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount }, config);
         return;
     }
     // Timeout or error — fall back to cache
     if (result.error === "timeout" || result.error.startsWith("API error")) {
         const cached = readCache();
         if (cached && cached.memories.length > 0) {
-            emitOutput(cached.memories, true, config);
+            emitOutput(cached.memories, { fromCache: true }, config);
         }
     }
 }
