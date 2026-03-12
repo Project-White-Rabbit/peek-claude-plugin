@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process"
 import fs from "node:fs"
 
-interface HookInput {
+export interface HookInput {
   session_id: string
   transcript_path: string
   cwd: string
