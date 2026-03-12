@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process"
 import fs from "node:fs"
 
 interface HookInput {
@@ -14,6 +15,8 @@ export interface ConversationContext {
   toolsUsed: string[]
   sessionId: string
   cwd: string
+  repository: string | null
+  gitBranch: string | null
 }
 
 export function buildConversationContext(
@@ -35,6 +38,8 @@ export function buildConversationContext(
     toolsUsed,
     sessionId: input.session_id,
     cwd: input.cwd,
+    repository: getRepository(input.cwd),
+    gitBranch: getGitBranch(input.cwd),
   }
 }
 
@@ -50,6 +55,51 @@ interface TranscriptEntry {
   message?: {
     role?: string
     content?: string | ContentBlock[]
+  }
+}
+
+export function getGitBranch(cwd: string): string | null {
+  try {
+    return execFileSync(
+      "git",
+      ["branch", "--show-current"],
+      { cwd, timeout: 2000, encoding: "utf-8" },
+    ).trim() || null
+  } catch {
+    return null
+  }
+}
+
+export function getRepository(cwd: string): string | null {
+  try {
+    const remoteUrl = execFileSync(
+      "git",
+      ["config", "--get", "remote.origin.url"],
+      { cwd, timeout: 2000, encoding: "utf-8" },
+    ).trim()
+
+    if (!remoteUrl) {
+      return null
+    }
+
+    // Normalize git URLs to "owner/repo" format:
+    //   git@github.com:owner/repo.git → owner/repo
+    //   https://github.com/owner/repo.git → owner/repo
+    //   https://github.com/owner/repo → owner/repo
+    const sshMatch = remoteUrl.match(/:([^/]+\/[^/]+?)(?:\.git)?$/)
+    if (sshMatch) {
+      return sshMatch[1]
+    }
+    const httpsMatch = remoteUrl.match(
+      /\/([^/]+\/[^/]+?)(?:\.git)?$/,
+    )
+    if (httpsMatch) {
+      return httpsMatch[1]
+    }
+
+    return remoteUrl
+  } catch {
+    return null
   }
 }
 
