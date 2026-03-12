@@ -34,5 +34,5 @@ export async function checkForUpdate() {
     };
 }
 export function formatUpdateMessage(current, latest) {
-    return `v${latest} available — /plugin → update marketplace, then update plugin`;
+    return `v${latest} available — run /peek:update to update`;
 }

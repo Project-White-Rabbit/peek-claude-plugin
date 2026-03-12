@@ -51,5 +51,5 @@ export function formatUpdateMessage(
   current: string,
   latest: string,
 ): string {
-  return `v${latest} available — /plugin → update marketplace, then update plugin`
+  return `v${latest} available — run /peek:update to update`
 }

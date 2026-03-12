@@ -41,7 +41,6 @@ async function main() {
 
   console.log(`Status: ${connectionStatus}`)
   console.log(`Logging: ${config.showStatusLine ? "default" : "hidden"}`)
-
 }
 
 main().catch((err) => {
