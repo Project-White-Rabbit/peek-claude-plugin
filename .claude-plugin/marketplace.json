@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Behavioral memory for Claude Code — automatically learns your preferences and injects relevant context to steer your coding agents.",
-    "version": "0.1.14"
+    "version": "0.1.15"
   },
   "plugins": [
     {
       "name": "peek",
       "source": "./",
       "description": "Behavioral memory for Claude Code — automatically learns your preferences and injects relevant context to steer your coding agents.",
-      "version": "0.1.14",
+      "version": "0.1.15",
       "homepage": "https://github.com/Project-White-Rabbit/peek-claude-plugin",
       "repository": "https://github.com/Project-White-Rabbit/peek-claude-plugin",
       "license": "MIT",
