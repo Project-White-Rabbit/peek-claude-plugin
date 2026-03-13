@@ -49,14 +49,17 @@ function getShowStatusLine() {
     return true;
 }
 function getVerbose() {
+    if (process.env.PEEK_VERBOSE === "false" || process.env.PEEK_VERBOSE === "0") {
+        return false;
+    }
     if (process.env.PEEK_VERBOSE === "true" || process.env.PEEK_VERBOSE === "1") {
         return true;
     }
     const globalConfig = readJsonFile(CONFIG_FILE);
-    if (globalConfig?.verbose === true) {
-        return true;
+    if (globalConfig?.verbose === false) {
+        return false;
     }
-    return false;
+    return true;
 }
 export function getConfig() {
     return {
@@ -90,10 +93,10 @@ export function getLoggingLevel() {
     if (config?.showStatusLine === false) {
         return "none";
     }
-    if (config?.verbose === true) {
-        return "verbose";
+    if (config?.verbose === false) {
+        return "default";
     }
-    return "default";
+    return "verbose";
 }
 export function saveCredentials(apiKey) {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });

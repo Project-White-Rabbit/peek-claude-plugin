@@ -1,7 +1,7 @@
 {
   "name": "peek",
   "description": "Behavioral memory for Claude Code — automatically learns your preferences and injects relevant context to steer your coding agents.",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "author": {
     "name": "Peek"
   },
