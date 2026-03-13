@@ -8,11 +8,6 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-update",
             "async": false
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-session-memories",
-            "async": false
           }
         ]
       },
