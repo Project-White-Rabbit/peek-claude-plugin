@@ -1,5 +1,5 @@
 import { apiCall } from "../api.js";
-import { readCache, writeCache } from "../cache.js";
+import { clearCache, readCache, writeCache } from "../cache.js";
 import { getConfig, hasCredentials } from "../config.js";
 import { parseHookInput } from "../transcript.js";
 function formatMemories(memories) {
@@ -76,11 +76,26 @@ export async function injectMemories(opts) {
     if (result.ok) {
         writeCache(result.data.memories);
         emitOutput(result.data.memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount }, config);
+        // Confirm delivery so the server marks these memories as injected.
+        // Fire-and-forget: if this fails, the memories will simply be re-offered next time.
+        if (result.data.memories.length > 0) {
+            const memoryIds = result.data.memories.map((m) => m.id);
+            apiCall("/api/plugin/memories/confirm", {
+                memoryIds,
+                sessionId: input.session_id,
+            }).catch(() => { });
+        }
         return;
     }
     // Timeout or error — fall back to cache
     const cached = readCache();
     if (cached && cached.memories.length > 0) {
         emitOutput(cached.memories, { fromCache: true }, config);
+        clearCache();
+        const memoryIds = cached.memories.map((m) => m.id);
+        apiCall("/api/plugin/memories/confirm", {
+            memoryIds,
+            sessionId: input.session_id,
+        }).catch(() => { });
     }
 }

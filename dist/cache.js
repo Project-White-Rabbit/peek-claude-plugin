@@ -20,3 +20,6 @@ export function writeCache(memories) {
     };
     fs.writeFileSync(CACHE_FILE, `${JSON.stringify(data, null, 2)}\n`);
 }
+export function clearCache() {
+    fs.promises.unlink(CACHE_FILE).catch(() => { });
+}

@@ -7,7 +7,7 @@ import { buildConversationContext, parseHookInput } from "../transcript.js"
 // Server analyzes for dissatisfaction, saves memories, returns fresh memories for cache.
 
 interface PromptResponse {
-  memories: Array<{ content: string; category?: string; score?: number }>
+  memories: Array<{ id: string; content: string; category?: string; score?: number }>
   memoryCount: number
   savedMemory: { id: string; content: string } | null
 }

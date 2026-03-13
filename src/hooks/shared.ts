@@ -1,11 +1,16 @@
 import type { HookInput } from "../transcript.js"
 import { apiCall } from "../api.js"
-import { readCache, writeCache } from "../cache.js"
+import { clearCache, readCache, writeCache } from "../cache.js"
 import { type PeekConfig, getConfig, hasCredentials } from "../config.js"
 import { parseHookInput } from "../transcript.js"
 
 interface MemoryResponse {
-  memories: Array<{ content: string; category?: string; score?: number }>
+  memories: Array<{
+    id: string
+    content: string
+    category?: string
+    score?: number
+  }>
   memoryCount: number
   totalMemoryCount?: number
 }
@@ -128,6 +133,17 @@ export async function injectMemories(
       { fromCache: false, totalMemoryCount: result.data.totalMemoryCount },
       config,
     )
+
+    // Confirm delivery so the server marks these memories as injected.
+    // Fire-and-forget: if this fails, the memories will simply be re-offered next time.
+    if (result.data.memories.length > 0) {
+      const memoryIds = result.data.memories.map((m) => m.id)
+      apiCall("/api/plugin/memories/confirm", {
+        memoryIds,
+        sessionId: input.session_id,
+      }).catch(() => {})
+    }
+
     return
   }
 
@@ -135,5 +151,12 @@ export async function injectMemories(
   const cached = readCache()
   if (cached && cached.memories.length > 0) {
     emitOutput(cached.memories, { fromCache: true }, config)
+    clearCache()
+
+    const memoryIds = cached.memories.map((m) => m.id)
+    apiCall("/api/plugin/memories/confirm", {
+      memoryIds,
+      sessionId: input.session_id,
+    }).catch(() => {})
   }
 }

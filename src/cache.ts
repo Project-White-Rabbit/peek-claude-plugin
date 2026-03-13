@@ -6,7 +6,7 @@ const CACHE_DIR = path.join(os.homedir(), ".config", "peek")
 const CACHE_FILE = path.join(CACHE_DIR, "memory-cache.json")
 
 export interface CachedMemories {
-  memories: Array<{ content: string; category?: string; score?: number }>
+  memories: Array<{ id: string; content: string; category?: string; score?: number }>
   updatedAt: string
 }
 
@@ -26,4 +26,8 @@ export function writeCache(memories: CachedMemories["memories"]): void {
     updatedAt: new Date().toISOString(),
   }
   fs.writeFileSync(CACHE_FILE, `${JSON.stringify(data, null, 2)}\n`)
+}
+
+export function clearCache(): void {
+  fs.promises.unlink(CACHE_FILE).catch(() => {})
 }
