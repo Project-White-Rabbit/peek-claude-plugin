@@ -43,8 +43,15 @@ async function main() {
             const token = url.searchParams.get("token");
             if (token) {
                 saveCredentials(token);
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ ok: true }));
+                res.writeHead(200, { "Content-Type": "text/html" });
+                res.end(`<html>
+<body style="background:#0a0a0a;color:white;font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh">
+  <div style="text-align:center">
+    <h1 style="font-size:24px">Peek</h1>
+    <p style="color:#4ade80">Authenticated! You can close this tab.</p>
+  </div>
+</body>
+</html>`);
                 console.log("Authentication successful!");
                 setTimeout(() => {
                     server.close();
