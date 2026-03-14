@@ -17,7 +17,7 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-compaction",
-            "async": false
+            "async": true
           }
         ]
       }
