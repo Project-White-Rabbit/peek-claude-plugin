@@ -10,9 +10,17 @@ export interface PeekConfig {
 }
 
 const DEFAULT_SERVICE_URL = "https://www.gopeek.ai"
-const CONFIG_DIR = path.join(os.homedir(), ".config", "peek")
-const CONFIG_FILE = path.join(CONFIG_DIR, "config.json")
-const CREDENTIALS_FILE = path.join(CONFIG_DIR, "credentials.json")
+const GLOBAL_CONFIG_DIR = path.join(os.homedir(), ".config", "peek")
+const GLOBAL_CONFIG_FILE = path.join(GLOBAL_CONFIG_DIR, "config.json")
+const GLOBAL_CREDENTIALS_FILE = path.join(GLOBAL_CONFIG_DIR, "credentials.json")
+
+function getCwd(): string {
+  return process.env.PEEK_CWD ?? process.cwd()
+}
+
+function getProjectDir(): string {
+  return path.join(getCwd(), ".peek")
+}
 
 function readJsonFile(filePath: string): Record<string, unknown> | null {
   try {
@@ -23,44 +31,43 @@ function readJsonFile(filePath: string): Record<string, unknown> | null {
   }
 }
 
+function getConfigData(): Record<string, unknown> {
+  return (
+    readJsonFile(path.join(getProjectDir(), "config.json")) ??
+    readJsonFile(GLOBAL_CONFIG_FILE) ??
+    {}
+  )
+}
+
+function getCredentialsData(): Record<string, unknown> {
+  return (
+    readJsonFile(path.join(getProjectDir(), "credentials.json")) ??
+    readJsonFile(GLOBAL_CREDENTIALS_FILE) ??
+    {}
+  )
+}
+
 function getServiceUrl(): string {
-  // Priority: env var → project .peek.json → global config → default
   if (process.env.PEEK_SERVICE_URL) {
     return process.env.PEEK_SERVICE_URL
   }
-
-  const cwd = process.env.PEEK_CWD ?? process.cwd()
-  const projectConfig = readJsonFile(path.join(cwd, ".peek.json"))
-  if (
-    projectConfig?.serviceUrl &&
-    typeof projectConfig.serviceUrl === "string"
-  ) {
-    return projectConfig.serviceUrl
-  }
-
-  const globalConfig = readJsonFile(CONFIG_FILE)
-  if (globalConfig?.serviceUrl && typeof globalConfig.serviceUrl === "string") {
-    return globalConfig.serviceUrl
-  }
-
-  return DEFAULT_SERVICE_URL
+  const config = getConfigData()
+  return typeof config.serviceUrl === "string"
+    ? config.serviceUrl
+    : DEFAULT_SERVICE_URL
 }
 
 function getApiKey(): string | null {
   if (process.env.PEEK_API_KEY) {
     return process.env.PEEK_API_KEY
   }
-
-  const creds = readJsonFile(CREDENTIALS_FILE)
-  if (creds?.apiKey && typeof creds.apiKey === "string") {
-    return creds.apiKey
-  }
-  return null
+  const creds = getCredentialsData()
+  return typeof creds.apiKey === "string" ? creds.apiKey : null
 }
 
 function getShowStatusLine(): boolean {
-  const globalConfig = readJsonFile(CONFIG_FILE)
-  if (globalConfig?.showStatusLine === false) {
+  const config = getConfigData()
+  if (config.showStatusLine === false) {
     return false
   }
   return true
@@ -73,8 +80,8 @@ function getVerbose(): boolean {
   if (process.env.PEEK_VERBOSE === "true" || process.env.PEEK_VERBOSE === "1") {
     return true
   }
-  const globalConfig = readJsonFile(CONFIG_FILE)
-  if (globalConfig?.verbose === false) {
+  const config = getConfigData()
+  if (config.verbose === false) {
     return false
   }
   return true
@@ -90,51 +97,51 @@ export function getConfig(): PeekConfig {
 }
 
 export function setShowStatusLine(value: boolean): void {
-  fs.mkdirSync(CONFIG_DIR, { recursive: true })
-
-  const existing = readJsonFile(CONFIG_FILE) ?? {}
+  fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
+  const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {}
   existing.showStatusLine = value
-  fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
+  fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
 }
 
 export function setVerbose(value: boolean): void {
-  fs.mkdirSync(CONFIG_DIR, { recursive: true })
-
-  const existing = readJsonFile(CONFIG_FILE) ?? {}
+  fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
+  const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {}
   existing.verbose = value
-  fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
+  fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
 }
 
 export type LoggingLevel = "verbose" | "default" | "none"
 
 export function setLoggingLevel(level: LoggingLevel): void {
-  fs.mkdirSync(CONFIG_DIR, { recursive: true })
-
-  const existing = readJsonFile(CONFIG_FILE) ?? {}
+  fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
+  const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {}
   existing.showStatusLine = level !== "none"
   existing.verbose = level === "verbose"
-  fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
+  fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
 }
 
 export function getLoggingLevel(): LoggingLevel {
-  const config = readJsonFile(CONFIG_FILE)
-  if (config?.showStatusLine === false) {
+  const config = getConfigData()
+  if (config.showStatusLine === false) {
     return "none"
   }
-  if (config?.verbose === false) {
+  if (config.verbose === false) {
     return "default"
   }
   return "verbose"
 }
 
 export function saveCredentials(apiKey: string): void {
-  fs.mkdirSync(CONFIG_DIR, { recursive: true })
-  fs.writeFileSync(CREDENTIALS_FILE, `${JSON.stringify({ apiKey }, null, 2)}\n`)
+  fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
+  fs.writeFileSync(
+    GLOBAL_CREDENTIALS_FILE,
+    `${JSON.stringify({ apiKey }, null, 2)}\n`,
+  )
 }
 
 export function deleteCredentials(): void {
   try {
-    fs.unlinkSync(CREDENTIALS_FILE)
+    fs.unlinkSync(GLOBAL_CREDENTIALS_FILE)
   } catch {
     // already gone
   }
@@ -144,4 +151,4 @@ export function hasCredentials(): boolean {
   return getApiKey() !== null
 }
 
-export { CONFIG_DIR, CREDENTIALS_FILE }
+export { GLOBAL_CONFIG_DIR as CONFIG_DIR, GLOBAL_CREDENTIALS_FILE as CREDENTIALS_FILE }
