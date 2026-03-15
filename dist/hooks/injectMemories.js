@@ -12,6 +12,7 @@ injectMemories({
         return context;
     },
     timeoutMs: 2000,
+    hookEventName: "UserPromptSubmit",
 }).catch(() => {
     // Silent failure — never block the user
 });

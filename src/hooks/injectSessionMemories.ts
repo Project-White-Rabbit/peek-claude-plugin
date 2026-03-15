@@ -10,6 +10,7 @@ injectMemories({
     cwd: input.cwd,
   }),
   timeoutMs: 2000,
+  hookEventName: "SessionStart",
 }).catch(() => {
   // Silent failure — never block the user
 })

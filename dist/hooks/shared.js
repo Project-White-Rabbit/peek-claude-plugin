@@ -53,7 +53,10 @@ function emitOutput(memories, opts, config) {
     const context = formatMemories(memories);
     const output = {};
     if (context) {
-        output.additionalContext = context;
+        output.hookSpecificOutput = {
+            hookEventName: opts.hookEventName,
+            additionalContext: context,
+        };
     }
     if (statusLine) {
         output.systemMessage = statusLine;
@@ -75,7 +78,7 @@ export async function injectMemories(opts) {
     const result = await apiCall(opts.endpoint, opts.buildBody(input), { timeoutMs: opts.timeoutMs });
     if (result.ok) {
         writeCache(result.data.memories);
-        emitOutput(result.data.memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount }, config);
+        emitOutput(result.data.memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName }, config);
         // Confirm delivery so the server marks these memories as injected.
         // Fire-and-forget: if this fails, the memories will simply be re-offered next time.
         if (result.data.memories.length > 0) {
@@ -90,7 +93,7 @@ export async function injectMemories(opts) {
     // Timeout or error — fall back to cache
     const cached = readCache();
     if (cached && cached.memories.length > 0) {
-        emitOutput(cached.memories, { fromCache: true }, config);
+        emitOutput(cached.memories, { fromCache: true, hookEventName: opts.hookEventName }, config);
         clearCache();
         const memoryIds = cached.memories.map((m) => m.id);
         apiCall("/api/plugin/memories/confirm", {

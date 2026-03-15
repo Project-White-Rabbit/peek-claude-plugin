@@ -72,7 +72,7 @@ function formatStatusLine(
 
 function emitOutput(
   memories: MemoryResponse["memories"],
-  opts: { fromCache: boolean; totalMemoryCount?: number },
+  opts: { fromCache: boolean; totalMemoryCount?: number; hookEventName: string },
   config: PeekConfig,
 ): void {
   const statusLine = config.showStatusLine
@@ -85,9 +85,12 @@ function emitOutput(
 
   const context = formatMemories(memories)
 
-  const output: Record<string, string> = {}
+  const output: Record<string, unknown> = {}
   if (context) {
-    output.additionalContext = context
+    output.hookSpecificOutput = {
+      hookEventName: opts.hookEventName,
+      additionalContext: context,
+    }
   }
   if (statusLine) {
     output.systemMessage = statusLine
@@ -102,6 +105,7 @@ export interface InjectMemoriesOptions {
   endpoint: string
   buildBody: (input: HookInput) => object
   timeoutMs: number
+  hookEventName: string
 }
 
 export async function injectMemories(
@@ -130,7 +134,7 @@ export async function injectMemories(
     writeCache(result.data.memories)
     emitOutput(
       result.data.memories,
-      { fromCache: false, totalMemoryCount: result.data.totalMemoryCount },
+      { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName },
       config,
     )
 
@@ -150,7 +154,7 @@ export async function injectMemories(
   // Timeout or error — fall back to cache
   const cached = readCache()
   if (cached && cached.memories.length > 0) {
-    emitOutput(cached.memories, { fromCache: true }, config)
+    emitOutput(cached.memories, { fromCache: true, hookEventName: opts.hookEventName }, config)
     clearCache()
 
     const memoryIds = cached.memories.map((m) => m.id)
