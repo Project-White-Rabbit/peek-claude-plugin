@@ -5,37 +5,29 @@ export async function apiCall(path, body, options) {
     if (!config.apiKey) {
         return { ok: false, error: "Not authenticated. Run /peek:login first." };
     }
-    const controller = new AbortController();
-    const timeoutId = options?.timeoutMs
-        ? setTimeout(() => controller.abort(), options.timeoutMs)
-        : null;
-    try {
-        const response = await fetch(`${config.serviceUrl}${path}`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${config.apiKey}`,
-                "Content-Type": "application/json",
-                "X-Plugin-Version": getVersion(),
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal,
-        });
+    const fetchPromise = fetch(`${config.serviceUrl}${path}`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${config.apiKey}`,
+            "Content-Type": "application/json",
+            "X-Plugin-Version": getVersion(),
+        },
+        body: JSON.stringify(body),
+    }).then(async (response) => {
         if (!response.ok) {
             const text = await response.text();
             return { ok: false, error: `API error (${response.status}): ${text}` };
         }
         const data = (await response.json());
         return { ok: true, data };
-    }
-    catch (err) {
-        if (err instanceof Error && err.name === "AbortError") {
-            return { ok: false, error: "timeout" };
-        }
+    }).catch((err) => {
         return { ok: false, error: String(err) };
+    });
+    if (!options?.timeoutMs) {
+        return fetchPromise;
     }
-    finally {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-        }
-    }
+    const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => resolve({ ok: false, error: "timeout" }), options.timeoutMs);
+    });
+    return Promise.race([fetchPromise, timeoutPromise]);
 }
