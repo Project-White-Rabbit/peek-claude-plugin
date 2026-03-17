@@ -66,7 +66,7 @@ function formatMemories(memories: MemoryResponse["memories"]): string {
 
 function formatStatusLine(
   memories: MemoryResponse["memories"],
-  opts: { fromCache: boolean; verbose: boolean; totalMemoryCount?: number },
+  opts: { fromCache: boolean; verbose: boolean; totalMemoryCount?: number; debug?: boolean; durationMs?: number },
 ): string | null {
   const alreadyInContext =
     opts.totalMemoryCount != null ? opts.totalMemoryCount - memories.length : 0
@@ -85,9 +85,10 @@ function formatStatusLine(
     alreadyInContext > 0
       ? ` (${alreadyInContext} already in context)`
       : ""
+  const prefix = opts.debug ? `[Peek][${opts.durationMs != null ? `${opts.durationMs}ms` : "unknown"}]` : "[Peek]"
 
   const parts = [
-    `[Peek] ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}${contextStr}`,
+    `${prefix} ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}${contextStr}`,
   ]
 
   if (opts.verbose) {
@@ -102,7 +103,7 @@ function formatStatusLine(
 
 function emitOutput(
   memories: MemoryResponse["memories"],
-  opts: { fromCache: boolean; totalMemoryCount?: number; hookEventName: string },
+  opts: { fromCache: boolean; totalMemoryCount?: number; hookEventName: string; timedOut?: boolean; errorDetail?: string; durationMs?: number },
   config: PeekConfig,
 ): void {
   const statusLine = config.showStatusLine
@@ -110,10 +111,28 @@ function emitOutput(
         fromCache: opts.fromCache,
         verbose: config.verbose,
         totalMemoryCount: opts.totalMemoryCount,
+        debug: config.debug,
+        durationMs: opts.durationMs,
       })
     : null
 
   const context = formatMemories(memories)
+
+  const showDebug = config.debug && (memories.length === 0 || opts.timedOut || opts.errorDetail)
+  const debugLines: string[] = []
+  if (showDebug) {
+    const debugPrefix = `[Peek Debug][${opts.durationMs != null ? `${opts.durationMs}ms` : "unknown"}]`
+    if (opts.timedOut && memories.length === 0) {
+      debugLines.push(`${debugPrefix} Request timed out — cache empty`)
+    } else if (opts.errorDetail) {
+      debugLines.push(`${debugPrefix} Error: ${opts.errorDetail}`)
+    } else if (memories.length === 0) {
+      const alreadyInContext = (opts.totalMemoryCount ?? 0) - memories.length
+      if (alreadyInContext === 0) {
+        debugLines.push(`${debugPrefix} 0 memories injected (0 returned from search)`)
+      }
+    }
+  }
 
   const output: Record<string, unknown> = {}
   if (context) {
@@ -122,8 +141,13 @@ function emitOutput(
       additionalContext: context,
     }
   }
+
+  const allStatusParts = [...debugLines]
   if (statusLine) {
-    output.systemMessage = statusLine
+    allStatusParts.push(statusLine)
+  }
+  if (allStatusParts.length > 0) {
+    output.systemMessage = allStatusParts.join("\n")
   }
 
   if (Object.keys(output).length > 0) {
@@ -141,6 +165,8 @@ export interface InjectMemoriesOptions {
 export async function injectMemories(
   opts: InjectMemoriesOptions,
 ): Promise<void> {
+  const config = getConfig()
+
   if (!hasCredentials()) {
     return
   }
@@ -152,26 +178,27 @@ export async function injectMemories(
 
   process.env.PEEK_CWD = input.cwd
 
-  const config = getConfig()
-
+  const startMs = Date.now()
   const result = await apiCall<MemoryResponse>(
     opts.endpoint,
     opts.buildBody(input),
     { timeoutMs: opts.timeoutMs },
   )
+  const durationMs = Date.now() - startMs
 
   if (result.ok) {
-    writeCache(result.data.memories)
+    const memories = result.data.memories ?? []
+    writeCache(memories)
     emitOutput(
-      result.data.memories,
-      { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName },
+      memories,
+      { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs },
       config,
     )
 
     // Confirm delivery so the server marks these memories as injected.
     // Fire-and-forget: if this fails, the memories will simply be re-offered next time.
-    if (result.data.memories.length > 0) {
-      const memoryIds = result.data.memories.map((m) => m.id)
+    if (memories.length > 0) {
+      const memoryIds = memories.map((m) => m.id)
       apiCall("/api/plugin/memories/confirm", {
         memoryIds,
         sessionId: input.session_id,
@@ -182,15 +209,20 @@ export async function injectMemories(
   }
 
   // Timeout or error — fall back to cache
+  const timedOut = result.error === "timeout"
+  const errorDetail = !timedOut ? result.error : undefined
   const cached = readCache()
-  if (cached && cached.memories.length > 0) {
-    emitOutput(cached.memories, { fromCache: true, hookEventName: opts.hookEventName }, config)
+  const cachedMemories = cached?.memories ?? []
+  if (cachedMemories.length > 0) {
+    emitOutput(cachedMemories, { fromCache: true, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config)
     clearCache()
 
-    const memoryIds = cached.memories.map((m) => m.id)
+    const memoryIds = cachedMemories.map((m) => m.id)
     apiCall("/api/plugin/memories/confirm", {
       memoryIds,
       sessionId: input.session_id,
     }).catch(() => {})
+  } else if (config.debug) {
+    emitOutput([], { fromCache: false, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config)
   }
 }

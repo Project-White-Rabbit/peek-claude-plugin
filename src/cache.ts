@@ -20,6 +20,9 @@ export function readCache(): CachedMemories | null {
 }
 
 export function writeCache(memories: CachedMemories["memories"]): void {
+  if (!Array.isArray(memories)) {
+    return
+  }
   fs.mkdirSync(CACHE_DIR, { recursive: true })
   const data: CachedMemories = {
     memories,

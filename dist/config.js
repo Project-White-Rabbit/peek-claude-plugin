@@ -66,12 +66,20 @@ function getVerbose() {
     }
     return true;
 }
+function getDebug() {
+    if (process.env.PEEK_DEBUG === "true" || process.env.PEEK_DEBUG === "1") {
+        return true;
+    }
+    const config = getConfigData();
+    return config.debug === true;
+}
 export function getConfig() {
     return {
         serviceUrl: getServiceUrl(),
         apiKey: getApiKey(),
         showStatusLine: getShowStatusLine(),
         verbose: getVerbose(),
+        debug: getDebug(),
     };
 }
 export function setShowStatusLine(value) {
@@ -90,11 +98,15 @@ export function setLoggingLevel(level) {
     fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
     const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {};
     existing.showStatusLine = level !== "none";
-    existing.verbose = level === "verbose";
+    existing.verbose = level === "verbose" || level === "debug";
+    existing.debug = level === "debug";
     fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`);
 }
 export function getLoggingLevel() {
     const config = getConfigData();
+    if (config.debug === true) {
+        return "debug";
+    }
     if (config.showStatusLine === false) {
         return "none";
     }

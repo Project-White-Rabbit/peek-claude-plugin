@@ -13,6 +13,9 @@ export function readCache() {
     }
 }
 export function writeCache(memories) {
+    if (!Array.isArray(memories)) {
+        return;
+    }
     fs.mkdirSync(CACHE_DIR, { recursive: true });
     const data = {
         memories,

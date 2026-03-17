@@ -7,6 +7,7 @@ export interface PeekConfig {
   apiKey: string | null
   showStatusLine: boolean
   verbose: boolean
+  debug: boolean
 }
 
 const DEFAULT_SERVICE_URL = "https://www.gopeek.ai"
@@ -87,12 +88,21 @@ function getVerbose(): boolean {
   return true
 }
 
+function getDebug(): boolean {
+  if (process.env.PEEK_DEBUG === "true" || process.env.PEEK_DEBUG === "1") {
+    return true
+  }
+  const config = getConfigData()
+  return config.debug === true
+}
+
 export function getConfig(): PeekConfig {
   return {
     serviceUrl: getServiceUrl(),
     apiKey: getApiKey(),
     showStatusLine: getShowStatusLine(),
     verbose: getVerbose(),
+    debug: getDebug(),
   }
 }
 
@@ -110,18 +120,22 @@ export function setVerbose(value: boolean): void {
   fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
 }
 
-export type LoggingLevel = "verbose" | "default" | "none"
+export type LoggingLevel = "verbose" | "default" | "none" | "debug"
 
 export function setLoggingLevel(level: LoggingLevel): void {
   fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
   const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {}
   existing.showStatusLine = level !== "none"
-  existing.verbose = level === "verbose"
+  existing.verbose = level === "verbose" || level === "debug"
+  existing.debug = level === "debug"
   fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
 }
 
 export function getLoggingLevel(): LoggingLevel {
   const config = getConfigData()
+  if (config.debug === true) {
+    return "debug"
+  }
   if (config.showStatusLine === false) {
     return "none"
   }
