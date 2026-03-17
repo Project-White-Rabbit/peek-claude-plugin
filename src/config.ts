@@ -5,7 +5,7 @@ import path from "node:path"
 export interface PeekConfig {
   serviceUrl: string
   apiKey: string | null
-  showStatusLine: boolean
+  showNotification: boolean
   verbose: boolean
   debug: boolean
 }
@@ -66,9 +66,9 @@ function getApiKey(): string | null {
   return typeof creds.apiKey === "string" ? creds.apiKey : null
 }
 
-function getShowStatusLine(): boolean {
+function getShowNotification(): boolean {
   const config = getConfigData()
-  if (config.showStatusLine === false) {
+  if (config.showNotification === false) {
     return false
   }
   return true
@@ -100,16 +100,16 @@ export function getConfig(): PeekConfig {
   return {
     serviceUrl: getServiceUrl(),
     apiKey: getApiKey(),
-    showStatusLine: getShowStatusLine(),
+    showNotification: getShowNotification(),
     verbose: getVerbose(),
     debug: getDebug(),
   }
 }
 
-export function setShowStatusLine(value: boolean): void {
+export function setShowNotification(value: boolean): void {
   fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
   const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {}
-  existing.showStatusLine = value
+  existing.showNotification = value
   fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
 }
 
@@ -125,7 +125,7 @@ export type LoggingLevel = "verbose" | "default" | "none" | "debug"
 export function setLoggingLevel(level: LoggingLevel): void {
   fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
   const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {}
-  existing.showStatusLine = level !== "none"
+  existing.showNotification = level !== "none"
   existing.verbose = level === "verbose" || level === "debug"
   existing.debug = level === "debug"
   fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
@@ -136,7 +136,7 @@ export function getLoggingLevel(): LoggingLevel {
   if (config.debug === true) {
     return "debug"
   }
-  if (config.showStatusLine === false) {
+  if (config.showNotification === false) {
     return "none"
   }
   if (config.verbose === false) {

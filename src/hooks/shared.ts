@@ -16,11 +16,27 @@ interface MemoryResponse {
     id: string
     content: string
     category?: string
+    updatedAt?: string
+    eventCount?: number
     score?: number
     events?: MemoryEvent[]
   }>
   memoryCount: number
   totalMemoryCount?: number
+}
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return "just now"
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}d ago`
+  const months = Math.floor(days / 30)
+  return `${months}mo ago`
 }
 
 function formatShortDate(iso: string): string {
@@ -35,36 +51,40 @@ function formatMemories(memories: MemoryResponse["memories"]): string {
     return ""
   }
 
-  const lines: string[] = []
+  const blocks: string[] = []
   for (const m of memories) {
+    const blockLines: string[] = []
     const cat = m.category ? ` [${m.category}]` : ""
-    lines.push(`${m.content}${cat}`)
+    blockLines.push(`${m.content}${cat}`)
     if (m.events && m.events.length > 0) {
       for (const e of m.events.slice(0, 3)) {
         const countSuffix =
           e.occurrenceCount && e.occurrenceCount > 1
             ? ` (${e.occurrenceCount}x)`
             : ""
-        lines.push(
+        blockLines.push(
           `    ↳ ${formatShortDate(e.createdAt)}: ${e.content}${countSuffix}`,
         )
       }
       if (m.events.length > 3) {
-        lines.push(`    ↳ +${m.events.length - 3} more`)
+        blockLines.push(`    ↳ +${m.events.length - 3} more`)
       }
     }
+    blocks.push(blockLines.join("\n"))
   }
 
   return [
     "Relevant memories about the user from the Peek product.",
     "For any memories that are behavioral corrections, preferences, or suggestions YOU MUST FOLLOW THEM:",
     "<memory>",
-    ...lines,
+    "",
+    blocks.join("\n\n"),
+    "",
     "</memory>",
   ].join("\n")
 }
 
-function formatStatusLine(
+function formatHookNotification(
   memories: MemoryResponse["memories"],
   opts: { fromCache: boolean; verbose: boolean; totalMemoryCount?: number; debug?: boolean; durationMs?: number },
 ): string | null {
@@ -89,12 +109,22 @@ function formatStatusLine(
 
   const parts = [
     `${prefix} ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}${contextStr}`,
+    "",
   ]
 
   if (opts.verbose) {
     for (const m of memories) {
-      const cat = m.category ? ` [${m.category}]` : ""
-      parts.push(`  - ${m.content}${cat}`)
+      const cat = m.category ?? ""
+      const age = m.updatedAt ? relativeTime(m.updatedAt) : ""
+      const meta = [cat, age].filter(Boolean).join(", ")
+      const suffix = meta ? ` [${meta}]` : ""
+      parts.push(`${m.content}${suffix}`)
+      if (m.eventCount && m.eventCount > 0) {
+        parts.push(
+          `    ↳ ${m.eventCount} ${m.eventCount === 1 ? "event" : "events"}`,
+        )
+      }
+      parts.push("")
     }
   }
 
@@ -106,8 +136,8 @@ function emitOutput(
   opts: { fromCache: boolean; totalMemoryCount?: number; hookEventName: string; timedOut?: boolean; errorDetail?: string; durationMs?: number },
   config: PeekConfig,
 ): void {
-  const statusLine = config.showStatusLine
-    ? formatStatusLine(memories, {
+  const statusLine = config.showNotification
+    ? formatHookNotification(memories, {
         fromCache: opts.fromCache,
         verbose: config.verbose,
         totalMemoryCount: opts.totalMemoryCount,

@@ -31,7 +31,7 @@ async function main() {
         connectionStatus = `authenticated, unreachable (${err instanceof Error ? err.message : String(err)})`;
     }
     console.log(`Status: ${connectionStatus}`);
-    console.log(`Logging: ${config.showStatusLine ? "default" : "hidden"}`);
+    console.log(`Logging: ${config.showNotification ? "default" : "hidden"}`);
 }
 main().catch((err) => {
     console.error("Status check failed:", err.message);

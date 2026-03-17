@@ -46,9 +46,9 @@ function getApiKey() {
     const creds = getCredentialsData();
     return typeof creds.apiKey === "string" ? creds.apiKey : null;
 }
-function getShowStatusLine() {
+function getShowNotification() {
     const config = getConfigData();
-    if (config.showStatusLine === false) {
+    if (config.showNotification === false) {
         return false;
     }
     return true;
@@ -77,15 +77,15 @@ export function getConfig() {
     return {
         serviceUrl: getServiceUrl(),
         apiKey: getApiKey(),
-        showStatusLine: getShowStatusLine(),
+        showNotification: getShowNotification(),
         verbose: getVerbose(),
         debug: getDebug(),
     };
 }
-export function setShowStatusLine(value) {
+export function setShowNotification(value) {
     fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
     const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {};
-    existing.showStatusLine = value;
+    existing.showNotification = value;
     fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`);
 }
 export function setVerbose(value) {
@@ -97,7 +97,7 @@ export function setVerbose(value) {
 export function setLoggingLevel(level) {
     fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
     const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {};
-    existing.showStatusLine = level !== "none";
+    existing.showNotification = level !== "none";
     existing.verbose = level === "verbose" || level === "debug";
     existing.debug = level === "debug";
     fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`);
@@ -107,7 +107,7 @@ export function getLoggingLevel() {
     if (config.debug === true) {
         return "debug";
     }
-    if (config.showStatusLine === false) {
+    if (config.showNotification === false) {
         return "none";
     }
     if (config.verbose === false) {
