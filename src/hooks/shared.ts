@@ -4,15 +4,30 @@ import { clearCache, readCache, writeCache } from "../cache.js"
 import { type PeekConfig, getConfig, hasCredentials } from "../config.js"
 import { parseHookInput } from "../transcript.js"
 
+interface MemoryEvent {
+  id: string
+  content: string
+  occurrenceCount?: number
+  createdAt: string
+}
+
 interface MemoryResponse {
   memories: Array<{
     id: string
     content: string
     category?: string
     score?: number
+    events?: MemoryEvent[]
   }>
   memoryCount: number
   totalMemoryCount?: number
+}
+
+function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  })
 }
 
 function formatMemories(memories: MemoryResponse["memories"]): string {
@@ -20,10 +35,25 @@ function formatMemories(memories: MemoryResponse["memories"]): string {
     return ""
   }
 
-  const lines = memories.map((m) => {
+  const lines: string[] = []
+  for (const m of memories) {
     const cat = m.category ? ` [${m.category}]` : ""
-    return `- ${m.content}${cat}`
-  })
+    lines.push(`${m.content}${cat}`)
+    if (m.events && m.events.length > 0) {
+      for (const e of m.events.slice(0, 3)) {
+        const countSuffix =
+          e.occurrenceCount && e.occurrenceCount > 1
+            ? ` (${e.occurrenceCount}x)`
+            : ""
+        lines.push(
+          `    ↳ ${formatShortDate(e.createdAt)}: ${e.content}${countSuffix}`,
+        )
+      }
+      if (m.events.length > 3) {
+        lines.push(`    ↳ +${m.events.length - 3} more`)
+      }
+    }
+  }
 
   return [
     "Relevant memories about the user from the Peek product.",

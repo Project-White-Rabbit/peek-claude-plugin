@@ -2,14 +2,32 @@ import { apiCall } from "../api.js";
 import { clearCache, readCache, writeCache } from "../cache.js";
 import { getConfig, hasCredentials } from "../config.js";
 import { parseHookInput } from "../transcript.js";
+function formatShortDate(iso) {
+    return new Date(iso).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+    });
+}
 function formatMemories(memories) {
     if (memories.length === 0) {
         return "";
     }
-    const lines = memories.map((m) => {
+    const lines = [];
+    for (const m of memories) {
         const cat = m.category ? ` [${m.category}]` : "";
-        return `- ${m.content}${cat}`;
-    });
+        lines.push(`${m.content}${cat}`);
+        if (m.events && m.events.length > 0) {
+            for (const e of m.events.slice(0, 3)) {
+                const countSuffix = e.occurrenceCount && e.occurrenceCount > 1
+                    ? ` (${e.occurrenceCount}x)`
+                    : "";
+                lines.push(`    ↳ ${formatShortDate(e.createdAt)}: ${e.content}${countSuffix}`);
+            }
+            if (m.events.length > 3) {
+                lines.push(`    ↳ +${m.events.length - 3} more`);
+            }
+        }
+    }
     return [
         "Relevant memories about the user from the Peek product.",
         "For any memories that are behavioral corrections, preferences, or suggestions YOU MUST FOLLOW THEM:",
