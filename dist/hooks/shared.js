@@ -1,5 +1,5 @@
 import { apiCall } from "../api.js";
-import { clearCache, readCache, writeCache } from "../cache.js";
+import { clearCache, getInjectedIds, readCache, trackInjectedIds, writeCache } from "../cache.js";
 import { getConfig, hasCredentials } from "../config.js";
 import { parseHookInput } from "../transcript.js";
 function relativeTime(iso) {
@@ -153,10 +153,12 @@ export async function injectMemories(opts) {
         const memories = result.data.memories ?? [];
         writeCache(memories);
         emitOutput(memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs }, config);
-        // Confirm delivery so the server marks these memories as injected.
-        // Fire-and-forget: if this fails, the memories will simply be re-offered next time.
         if (memories.length > 0) {
             const memoryIds = memories.map((m) => m.id);
+            try {
+                trackInjectedIds(input.session_id, memoryIds);
+            }
+            catch { }
             apiCall("/api/plugin/memories/confirm", {
                 memoryIds,
                 sessionId: input.session_id,
@@ -168,15 +170,27 @@ export async function injectMemories(opts) {
     const timedOut = result.error === "timeout";
     const errorDetail = !timedOut ? result.error : undefined;
     const cached = readCache();
-    const cachedMemories = cached?.memories ?? [];
+    let cachedMemories = cached?.memories ?? [];
     if (cachedMemories.length > 0) {
-        emitOutput(cachedMemories, { fromCache: true, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config);
+        const alreadyInjected = getInjectedIds(input.session_id);
+        const totalBeforeFilter = cachedMemories.length;
+        cachedMemories = cachedMemories.filter((m) => !alreadyInjected.has(m.id));
+        if (cachedMemories.length > 0) {
+            emitOutput(cachedMemories, { fromCache: true, totalMemoryCount: totalBeforeFilter, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config);
+            const memoryIds = cachedMemories.map((m) => m.id);
+            try {
+                trackInjectedIds(input.session_id, memoryIds);
+            }
+            catch { }
+            apiCall("/api/plugin/memories/confirm", {
+                memoryIds,
+                sessionId: input.session_id,
+            }).catch(() => { });
+        }
+        else if (config.debug) {
+            emitOutput([], { fromCache: true, totalMemoryCount: totalBeforeFilter, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config);
+        }
         clearCache();
-        const memoryIds = cachedMemories.map((m) => m.id);
-        apiCall("/api/plugin/memories/confirm", {
-            memoryIds,
-            sessionId: input.session_id,
-        }).catch(() => { });
     }
     else if (config.debug) {
         emitOutput([], { fromCache: false, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config);
