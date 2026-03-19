@@ -159,7 +159,6 @@ export async function injectMemories(opts) {
     const durationMs = Date.now() - startMs;
     if (result.ok) {
         const memories = result.data.memories ?? [];
-        writeCache(memories);
         emitOutput(memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs, prependText }, config);
         if (memories.length > 0) {
             const memoryIds = memories.map((m) => m.id);
@@ -202,5 +201,14 @@ export async function injectMemories(opts) {
     }
     else if (config.debug) {
         emitOutput([], { fromCache: false, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs, prependText }, config);
+    }
+    // On timeout, the fetch is still in-flight. When it completes, cache the
+    // result so the next timeout has fresh data instead of stale memories.
+    if (timedOut && "pendingFetch" in result) {
+        result.pendingFetch.then((late) => {
+            if (late.ok) {
+                writeCache(late.data.memories ?? []);
+            }
+        }).catch(() => { });
     }
 }

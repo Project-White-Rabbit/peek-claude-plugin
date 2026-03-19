@@ -1,7 +1,10 @@
 import { getConfig } from "./config.js"
 import { getVersion } from "./version.js"
 
-type ApiResponse<T> = { ok: true; data: T } | { ok: false; error: string }
+type ApiSuccess<T> = { ok: true; data: T }
+type ApiError = { ok: false; error: string }
+type ApiTimeout<T> = { ok: false; error: "timeout"; pendingFetch: Promise<ApiResponse<T>> }
+export type ApiResponse<T> = ApiSuccess<T> | ApiError | ApiTimeout<T>
 
 export async function apiCall<T>(
   path: string,
@@ -36,9 +39,15 @@ export async function apiCall<T>(
     return fetchPromise
   }
 
-  const timeoutPromise = new Promise<ApiResponse<T>>((resolve) => {
-    setTimeout(() => resolve({ ok: false, error: "timeout" }), options.timeoutMs)
+  const timeoutPromise = new Promise<"timeout">((resolve) => {
+    setTimeout(() => resolve("timeout"), options.timeoutMs)
   })
 
-  return Promise.race([fetchPromise, timeoutPromise])
+  const winner = await Promise.race([fetchPromise, timeoutPromise])
+
+  if (winner === "timeout") {
+    return { ok: false as const, error: "timeout", pendingFetch: fetchPromise }
+  }
+
+  return winner
 }
