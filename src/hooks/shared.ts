@@ -133,7 +133,7 @@ function formatHookNotification(
 
 function emitOutput(
   memories: MemoryResponse["memories"],
-  opts: { fromCache: boolean; totalMemoryCount?: number; hookEventName: string; timedOut?: boolean; errorDetail?: string; durationMs?: number },
+  opts: { fromCache: boolean; totalMemoryCount?: number; hookEventName: string; timedOut?: boolean; errorDetail?: string; durationMs?: number; prependText?: string | null },
   config: PeekConfig,
 ): void {
   const statusLine = config.showNotification
@@ -172,7 +172,11 @@ function emitOutput(
     }
   }
 
-  const allStatusParts = [...debugLines]
+  const allStatusParts: string[] = []
+  if (opts.prependText) {
+    allStatusParts.push(opts.prependText)
+  }
+  allStatusParts.push(...debugLines)
   if (statusLine) {
     allStatusParts.push(statusLine)
   }
@@ -190,6 +194,7 @@ export interface InjectMemoriesOptions {
   buildBody: (input: HookInput) => object
   timeoutMs: number
   hookEventName: string
+  prependToSystemMessage?: Promise<string | null>
 }
 
 export async function injectMemories(
@@ -209,11 +214,14 @@ export async function injectMemories(
   process.env.PEEK_CWD = input.cwd
 
   const startMs = Date.now()
-  const result = await apiCall<MemoryResponse>(
-    opts.endpoint,
-    opts.buildBody(input),
-    { timeoutMs: opts.timeoutMs },
-  )
+  const [result, prependText] = await Promise.all([
+    apiCall<MemoryResponse>(
+      opts.endpoint,
+      opts.buildBody(input),
+      { timeoutMs: opts.timeoutMs },
+    ),
+    opts.prependToSystemMessage ?? Promise.resolve(null),
+  ])
   const durationMs = Date.now() - startMs
 
   if (result.ok) {
@@ -221,7 +229,7 @@ export async function injectMemories(
     writeCache(memories)
     emitOutput(
       memories,
-      { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs },
+      { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs, prependText },
       config,
     )
 
@@ -266,6 +274,6 @@ export async function injectMemories(
     }
     clearCache()
   } else if (config.debug) {
-    emitOutput([], { fromCache: false, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config)
+    emitOutput([], { fromCache: false, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs, prependText }, config)
   }
 }

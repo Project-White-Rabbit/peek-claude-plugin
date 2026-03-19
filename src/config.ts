@@ -8,6 +8,7 @@ export interface PeekConfig {
   showNotification: boolean
   verbose: boolean
   debug: boolean
+  showStats: boolean
 }
 
 const DEFAULT_SERVICE_URL = "https://www.gopeek.ai"
@@ -96,6 +97,11 @@ function getDebug(): boolean {
   return config.debug === true
 }
 
+function getShowStats(): boolean {
+  const config = getConfigData()
+  return config.showStats !== false
+}
+
 export function getConfig(): PeekConfig {
   return {
     serviceUrl: getServiceUrl(),
@@ -103,6 +109,7 @@ export function getConfig(): PeekConfig {
     showNotification: getShowNotification(),
     verbose: getVerbose(),
     debug: getDebug(),
+    showStats: getShowStats(),
   }
 }
 
@@ -110,6 +117,13 @@ export function setShowNotification(value: boolean): void {
   fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
   const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {}
   existing.showNotification = value
+  fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
+}
+
+export function setShowStats(value: boolean): void {
+  fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true })
+  const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {}
+  existing.showStats = value
   fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`)
 }
 

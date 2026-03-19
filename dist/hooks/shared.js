@@ -125,7 +125,11 @@ function emitOutput(memories, opts, config) {
             additionalContext: context,
         };
     }
-    const allStatusParts = [...debugLines];
+    const allStatusParts = [];
+    if (opts.prependText) {
+        allStatusParts.push(opts.prependText);
+    }
+    allStatusParts.push(...debugLines);
     if (statusLine) {
         allStatusParts.push(statusLine);
     }
@@ -147,12 +151,15 @@ export async function injectMemories(opts) {
     }
     process.env.PEEK_CWD = input.cwd;
     const startMs = Date.now();
-    const result = await apiCall(opts.endpoint, opts.buildBody(input), { timeoutMs: opts.timeoutMs });
+    const [result, prependText] = await Promise.all([
+        apiCall(opts.endpoint, opts.buildBody(input), { timeoutMs: opts.timeoutMs }),
+        opts.prependToSystemMessage ?? Promise.resolve(null),
+    ]);
     const durationMs = Date.now() - startMs;
     if (result.ok) {
         const memories = result.data.memories ?? [];
         writeCache(memories);
-        emitOutput(memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs }, config);
+        emitOutput(memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs, prependText }, config);
         if (memories.length > 0) {
             const memoryIds = memories.map((m) => m.id);
             try {
@@ -193,6 +200,6 @@ export async function injectMemories(opts) {
         clearCache();
     }
     else if (config.debug) {
-        emitOutput([], { fromCache: false, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config);
+        emitOutput([], { fromCache: false, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs, prependText }, config);
     }
 }

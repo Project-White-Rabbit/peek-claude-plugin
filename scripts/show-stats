@@ -8,11 +8,11 @@ if [ -n "${NODE_OPTIONS:-}" ]; then
 fi
 
 if [ -n "${NODE_BIN:-}" ] && [ -x "${NODE_BIN}" ]; then
-  exec "${NODE_BIN}" "$ROOT/dist/hooks/injectSessionMemories.js" "$@"
+  exec "${NODE_BIN}" "$ROOT/dist/hooks/showStats.js" "$@"
 fi
 
 if command -v node >/dev/null 2>&1; then
-  exec node "$ROOT/dist/hooks/injectSessionMemories.js" "$@"
+  exec node "$ROOT/dist/hooks/showStats.js" "$@"
 fi
 
 echo "Error: Node.js not found." >&2

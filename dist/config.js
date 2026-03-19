@@ -73,6 +73,10 @@ function getDebug() {
     const config = getConfigData();
     return config.debug === true;
 }
+function getShowStats() {
+    const config = getConfigData();
+    return config.showStats !== false;
+}
 export function getConfig() {
     return {
         serviceUrl: getServiceUrl(),
@@ -80,12 +84,19 @@ export function getConfig() {
         showNotification: getShowNotification(),
         verbose: getVerbose(),
         debug: getDebug(),
+        showStats: getShowStats(),
     };
 }
 export function setShowNotification(value) {
     fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
     const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {};
     existing.showNotification = value;
+    fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`);
+}
+export function setShowStats(value) {
+    fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+    const existing = readJsonFile(GLOBAL_CONFIG_FILE) ?? {};
+    existing.showStats = value;
     fs.writeFileSync(GLOBAL_CONFIG_FILE, `${JSON.stringify(existing, null, 2)}\n`);
 }
 export function setVerbose(value) {
