@@ -16,6 +16,7 @@ interface MemoryResponse {
     id: string
     content: string
     category?: string
+    memoryNumber?: number | null
     updatedAt?: string
     eventCount?: number
     score?: number
@@ -114,11 +115,12 @@ function formatHookNotification(
 
   if (opts.verbose) {
     for (const m of memories) {
+      const num = m.memoryNumber != null ? `#${m.memoryNumber} ` : ""
       const cat = m.category ?? ""
       const age = m.updatedAt ? relativeTime(m.updatedAt) : ""
       const meta = [cat, age].filter(Boolean).join(", ")
       const suffix = meta ? ` [${meta}]` : ""
-      parts.push(`${m.content}${suffix}`)
+      parts.push(`${num}${m.content}${suffix}`)
       if (m.eventCount && m.eventCount > 0) {
         parts.push(
           `    ↳ ${m.eventCount} ${m.eventCount === 1 ? "event" : "events"}`,

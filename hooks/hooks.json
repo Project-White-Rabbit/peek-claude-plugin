@@ -6,12 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/show-stats",
-            "async": false
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-update",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-start",
             "async": false
           }
         ]
@@ -21,12 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/show-stats",
-            "async": false
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-update",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-start",
             "async": false
           }
         ]

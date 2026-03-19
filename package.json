@@ -1,6 +1,6 @@
 {
   "name": "peek-claude-plugin",
-  "version": "0.1.31",
+  "version": "0.1.32",
   "description": "Behavioral memory for Claude Code",
   "type": "module",
   "scripts": {
