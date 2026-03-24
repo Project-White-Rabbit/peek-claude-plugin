@@ -7,6 +7,9 @@ export interface HookInput {
   cwd: string
   hook_event_name: string
   prompt?: string
+  tool_name?: string
+  tool_input?: Record<string, unknown>
+  tool_use_id?: string
 }
 
 export interface ConversationContext {

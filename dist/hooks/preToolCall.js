@@ -1,20 +1,23 @@
 import { getConfig } from "../config.js";
 import { buildConversationContext } from "../transcript.js";
 import { injectMemories } from "./shared.js";
-// UserPromptSubmit hook: queries for semantically relevant memories
-// based on the current conversation context.
+// PreToolUse hook: queries for semantically relevant memories
+// based on the tool being called and conversation context.
 try {
     injectMemories({
         endpoint: "/api/plugin/triggers/search",
         buildBody: (input) => {
             const context = buildConversationContext(input, { contextEntries: 6 });
-            if (!context) {
-                return { hookName: "UserPromptSubmit", sessionId: input.session_id };
-            }
-            return { ...context, hookName: "UserPromptSubmit" };
+            return {
+                ...context,
+                prompt: null,
+                hookName: "PreToolUse",
+                toolName: input.tool_name,
+                toolInput: input.tool_input,
+            };
         },
         timeoutMs: 2500,
-        hookEventName: "UserPromptSubmit",
+        hookEventName: "PreToolUse",
     }).catch((err) => {
         if (getConfig().debug) {
             process.stdout.write(JSON.stringify({

@@ -1,5 +1,5 @@
 import { apiCall } from "../api.js";
-import { clearCache, getInjectedIds, readCache, trackInjectedIds, writeCache } from "../cache.js";
+import { trackInjectedIds } from "../cache.js";
 import { getConfig, hasCredentials } from "../config.js";
 import { parseHookInput } from "../transcript.js";
 function relativeTime(iso) {
@@ -66,13 +66,12 @@ function formatHookNotification(memories, opts) {
         ...new Set(memories.map((m) => m.category).filter(Boolean)),
     ];
     const categoryStr = categories.length > 0 ? ` [${categories.join(", ")}]` : "";
-    const cacheStr = opts.fromCache ? " (cached)" : "";
     const contextStr = alreadyInContext > 0
         ? ` (${alreadyInContext} already in context)`
         : "";
     const prefix = opts.debug ? `[Peek][${opts.durationMs != null ? `${opts.durationMs}ms` : "unknown"}]` : "[Peek]";
     const parts = [
-        `${prefix} ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${cacheStr}${categoryStr}${contextStr}`,
+        `${prefix} ${memories.length} ${memories.length === 1 ? "memory" : "memories"} injected${categoryStr}${contextStr}`,
         "",
     ];
     if (opts.verbose) {
@@ -94,7 +93,6 @@ function formatHookNotification(memories, opts) {
 function emitOutput(memories, opts, config) {
     const statusLine = config.showNotification
         ? formatHookNotification(memories, {
-            fromCache: opts.fromCache,
             verbose: config.verbose,
             totalMemoryCount: opts.totalMemoryCount,
             debug: config.debug,
@@ -106,8 +104,8 @@ function emitOutput(memories, opts, config) {
     const debugLines = [];
     if (showDebug) {
         const debugPrefix = `[Peek Debug][${opts.durationMs != null ? `${opts.durationMs}ms` : "unknown"}]`;
-        if (opts.timedOut && memories.length === 0) {
-            debugLines.push(`${debugPrefix} Request timed out — cache empty`);
+        if (opts.timedOut) {
+            debugLines.push(`${debugPrefix} Request timed out`);
         }
         else if (opts.errorDetail) {
             debugLines.push(`${debugPrefix} Error: ${opts.errorDetail}`);
@@ -159,7 +157,7 @@ export async function injectMemories(opts) {
     const durationMs = Date.now() - startMs;
     if (result.ok) {
         const memories = result.data.memories ?? [];
-        emitOutput(memories, { fromCache: false, totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs, prependText }, config);
+        emitOutput(memories, { totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs, prependText }, config);
         if (memories.length > 0) {
             const memoryIds = memories.map((m) => m.id);
             try {
@@ -173,42 +171,9 @@ export async function injectMemories(opts) {
         }
         return;
     }
-    // Timeout or error — fall back to cache
-    const timedOut = result.error === "timeout";
-    const errorDetail = !timedOut ? result.error : undefined;
-    const cached = readCache();
-    let cachedMemories = cached?.memories ?? [];
-    if (cachedMemories.length > 0) {
-        const alreadyInjected = getInjectedIds(input.session_id);
-        const totalBeforeFilter = cachedMemories.length;
-        cachedMemories = cachedMemories.filter((m) => !alreadyInjected.has(m.id));
-        if (cachedMemories.length > 0) {
-            emitOutput(cachedMemories, { fromCache: true, totalMemoryCount: totalBeforeFilter, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config);
-            const memoryIds = cachedMemories.map((m) => m.id);
-            try {
-                trackInjectedIds(input.session_id, memoryIds);
-            }
-            catch { }
-            apiCall("/api/plugin/memories/confirm", {
-                memoryIds,
-                sessionId: input.session_id,
-            }).catch(() => { });
-        }
-        else if (config.debug) {
-            emitOutput([], { fromCache: true, totalMemoryCount: totalBeforeFilter, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs }, config);
-        }
-        clearCache();
-    }
-    else if (config.debug) {
-        emitOutput([], { fromCache: false, timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs, prependText }, config);
-    }
-    // On timeout, the fetch is still in-flight. When it completes, cache the
-    // result so the next timeout has fresh data instead of stale memories.
-    if (timedOut && "pendingFetch" in result) {
-        result.pendingFetch.then((late) => {
-            if (late.ok) {
-                writeCache(late.data.memories ?? []);
-            }
-        }).catch(() => { });
+    if (config.debug) {
+        const timedOut = result.error === "timeout";
+        const errorDetail = !timedOut ? result.error : undefined;
+        emitOutput([], { timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs, prependText }, config);
     }
 }

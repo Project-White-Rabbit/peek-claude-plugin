@@ -3,8 +3,7 @@ import { getVersion } from "./version.js"
 
 type ApiSuccess<T> = { ok: true; data: T }
 type ApiError = { ok: false; error: string }
-type ApiTimeout<T> = { ok: false; error: "timeout"; pendingFetch: Promise<ApiResponse<T>> }
-export type ApiResponse<T> = ApiSuccess<T> | ApiError | ApiTimeout<T>
+export type ApiResponse<T> = ApiSuccess<T> | ApiError
 
 export async function apiCall<T>(
   path: string,
@@ -46,7 +45,7 @@ export async function apiCall<T>(
   const winner = await Promise.race([fetchPromise, timeoutPromise])
 
   if (winner === "timeout") {
-    return { ok: false as const, error: "timeout", pendingFetch: fetchPromise }
+    return { ok: false as const, error: "timeout" }
   }
 
   return winner

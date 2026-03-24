@@ -31,7 +31,7 @@ export async function apiCall(path, body, options) {
     });
     const winner = await Promise.race([fetchPromise, timeoutPromise]);
     if (winner === "timeout") {
-        return { ok: false, error: "timeout", pendingFetch: fetchPromise };
+        return { ok: false, error: "timeout" };
     }
     return winner;
 }

@@ -1,5 +1,4 @@
 import { apiCall } from "../api.js";
-import { writeCache } from "../cache.js";
 import { hasCredentials } from "../config.js";
 import { buildConversationContext, parseHookInput } from "../transcript.js";
 async function main() {
@@ -16,8 +15,8 @@ async function main() {
         return;
     }
     const result = await apiCall("/api/plugin/prompt", context);
-    if (result.ok) {
-        writeCache(result.data.memories);
+    if (!result.ok) {
+        return;
     }
 }
 main().catch(() => {

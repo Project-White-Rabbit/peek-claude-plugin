@@ -3,42 +3,11 @@ import os from "node:os"
 import path from "node:path"
 
 const CACHE_DIR = path.join(os.homedir(), ".config", "peek")
-const CACHE_FILE = path.join(CACHE_DIR, "memory-cache.json")
 const INJECTED_FILE = path.join(CACHE_DIR, "session-injected.json")
 
-export interface CachedMemories {
-  memories: Array<{ id: string; content: string; category?: string; score?: number }>
-  updatedAt: string
-}
-
-export function readCache(): CachedMemories | null {
-  try {
-    const content = fs.readFileSync(CACHE_FILE, "utf-8")
-    return JSON.parse(content)
-  } catch {
-    return null
-  }
-}
-
-export function writeCache(memories: CachedMemories["memories"]): void {
-  if (!Array.isArray(memories)) {
-    return
-  }
-  fs.mkdirSync(CACHE_DIR, { recursive: true })
-  const data: CachedMemories = {
-    memories,
-    updatedAt: new Date().toISOString(),
-  }
-  fs.writeFileSync(CACHE_FILE, `${JSON.stringify(data, null, 2)}\n`)
-}
-
-export function clearCache(): void {
-  fs.promises.unlink(CACHE_FILE).catch(() => {})
-}
-
 // --- Per-session injected memory tracking ---
-// Prevents duplicate injection when falling back to cache or when
-// fire-and-forget confirm hasn't completed before the next search.
+// Prevents duplicate injection when the fire-and-forget confirm
+// hasn't completed before the next search.
 
 interface SessionInjectedData {
   sessions: Record<string, { ids: string[]; lastUpdated: string }>

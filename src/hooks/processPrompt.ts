@@ -1,10 +1,9 @@
 import { apiCall } from "../api.js"
-import { writeCache } from "../cache.js"
 import { hasCredentials } from "../config.js"
 import { buildConversationContext, parseHookInput } from "../transcript.js"
 
 // Async hook: sends prompt + context to server for analysis.
-// Server analyzes for dissatisfaction, saves memories, returns fresh memories for cache.
+// Server extracts behavior memories from the conversation.
 
 interface PromptResponse {
   memories: Array<{ id: string; content: string; category?: string; score?: number }>
@@ -34,8 +33,8 @@ async function main() {
     context,
   )
 
-  if (result.ok) {
-    writeCache(result.data.memories)
+  if (!result.ok) {
+    return
   }
 }
 
