@@ -1,5 +1,6 @@
 ---
 description: "Set the Peek plugin logging level (none, default, verbose)"
+argument-hint: "[none|default|verbose] (no arg = show current)"
 allowed-tools: ["Bash"]
 ---
 

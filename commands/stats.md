@@ -1,5 +1,6 @@
 ---
 description: "Show Peek weekly stats, or toggle stats display (on/off)"
+argument-hint: "[on|off] (no arg = show stats)"
 allowed-tools: ["Bash"]
 ---
 
