@@ -26,7 +26,7 @@ async function main() {
   }
 
   const result = await apiCall<StatsResponse>(
-    "/api/plugin/sessions/stats",
+    "/api/plugin/memories/stats",
     {},
     { timeoutMs: 5000 },
   )
