@@ -13,14 +13,11 @@ async function main() {
     }
     let connectionStatus = "authenticated";
     try {
-        const response = await fetch(`${config.serviceUrl}/api/plugin/memories/search`, {
-            method: "POST",
+        const response = await fetch(`${config.serviceUrl}/api/plugin/health`, {
             headers: {
                 Authorization: `Bearer ${config.apiKey}`,
-                "Content-Type": "application/json",
                 "X-Plugin-Version": current,
             },
-            body: JSON.stringify({ query: "test" }),
             signal: AbortSignal.timeout(5000),
         });
         if (!response.ok) {
