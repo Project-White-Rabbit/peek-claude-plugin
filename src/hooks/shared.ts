@@ -225,7 +225,10 @@ export async function injectMemories(
   const durationMs = Date.now() - startMs
 
   if (result.ok) {
-    const memories = result.data.memories ?? []
+    const allMemories = result.data.memories ?? []
+    const alreadyInjected = getInjectedIds(input.session_id)
+    const memories = allMemories.filter((m) => !alreadyInjected.has(m.id))
+
     emitOutput(
       memories,
       { totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs, prependText },

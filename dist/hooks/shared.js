@@ -1,5 +1,5 @@
 import { apiCall } from "../api.js";
-import { trackInjectedIds } from "../cache.js";
+import { getInjectedIds, trackInjectedIds } from "../cache.js";
 import { getConfig, hasCredentials } from "../config.js";
 import { parseHookInput } from "../transcript.js";
 function relativeTime(iso) {
@@ -156,7 +156,9 @@ export async function injectMemories(opts) {
     ]);
     const durationMs = Date.now() - startMs;
     if (result.ok) {
-        const memories = result.data.memories ?? [];
+        const allMemories = result.data.memories ?? [];
+        const alreadyInjected = getInjectedIds(input.session_id);
+        const memories = allMemories.filter((m) => !alreadyInjected.has(m.id));
         emitOutput(memories, { totalMemoryCount: result.data.totalMemoryCount, hookEventName: opts.hookEventName, durationMs, prependText }, config);
         if (memories.length > 0) {
             const memoryIds = memories.map((m) => m.id);
