@@ -2,7 +2,7 @@ import { getConfig } from "./config.js"
 import { getVersion } from "./version.js"
 
 type ApiSuccess<T> = { ok: true; data: T }
-type ApiError = { ok: false; error: string }
+type ApiError = { ok: false; error: string; status?: number }
 export type ApiResponse<T> = ApiSuccess<T> | ApiError
 
 export async function apiCall<T>(
@@ -25,8 +25,7 @@ export async function apiCall<T>(
     body: JSON.stringify(body),
   }).then(async (response): Promise<ApiResponse<T>> => {
     if (!response.ok) {
-      const text = await response.text()
-      return { ok: false, error: `API error (${response.status}): ${text}` }
+      return { ok: false, error: `API error (${response.status})`, status: response.status }
     }
     const data = (await response.json()) as T
     return { ok: true, data }

@@ -15,8 +15,7 @@ export async function apiCall(path, body, options) {
         body: JSON.stringify(body),
     }).then(async (response) => {
         if (!response.ok) {
-            const text = await response.text();
-            return { ok: false, error: `API error (${response.status}): ${text}` };
+            return { ok: false, error: `API error (${response.status})`, status: response.status };
         }
         const data = (await response.json());
         return { ok: true, data };

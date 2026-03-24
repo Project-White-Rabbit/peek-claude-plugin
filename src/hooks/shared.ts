@@ -246,7 +246,9 @@ export async function injectMemories(
 
   if (config.debug) {
     const timedOut = result.error === "timeout"
-    const errorDetail = !timedOut ? result.error : undefined
+    const errorDetail = !timedOut
+      ? result.error
+      : undefined
     emitOutput([], { timedOut, errorDetail, hookEventName: opts.hookEventName, durationMs, prependText }, config)
   }
 }
