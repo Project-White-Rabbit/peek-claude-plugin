@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { getVersion } from "./version.js";
 const CURRENT_VERSION = getVersion();
 const REPO = "Project-White-Rabbit/peek-claude-plugin";
@@ -25,12 +28,29 @@ function isNewer(latest, current) {
     }
     return lPatch > cPatch;
 }
+function isAutoUpdateEnabled() {
+    try {
+        const marketplacesPath = path.join(os.homedir(), ".claude", "plugins", "known_marketplaces.json");
+        const content = fs.readFileSync(marketplacesPath, "utf-8");
+        const data = JSON.parse(content);
+        for (const marketplace of Object.values(data)) {
+            if (marketplace.source?.repo === REPO) {
+                return marketplace.autoUpdate === true;
+            }
+        }
+    }
+    catch {
+        // File doesn't exist or can't be parsed
+    }
+    return false;
+}
 export async function checkForUpdate() {
     const latest = await getLatestVersion();
     return {
         current: CURRENT_VERSION,
         latest,
         updateAvailable: latest !== null && isNewer(latest, CURRENT_VERSION),
+        autoUpdateEnabled: isAutoUpdateEnabled(),
     };
 }
 export function formatUpdateMessage(current, latest) {

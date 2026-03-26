@@ -1,3 +1,6 @@
+import fs from "node:fs"
+import os from "node:os"
+import path from "node:path"
 import { getVersion } from "./version.js"
 
 const CURRENT_VERSION = getVersion()
@@ -36,6 +39,31 @@ export interface UpdateStatus {
   current: string
   latest: string | null
   updateAvailable: boolean
+  autoUpdateEnabled: boolean
+}
+
+function isAutoUpdateEnabled(): boolean {
+  try {
+    const marketplacesPath = path.join(
+      os.homedir(),
+      ".claude",
+      "plugins",
+      "known_marketplaces.json",
+    )
+    const content = fs.readFileSync(marketplacesPath, "utf-8")
+    const data = JSON.parse(content) as Record<
+      string,
+      { autoUpdate?: boolean; source?: { repo?: string } }
+    >
+    for (const marketplace of Object.values(data)) {
+      if (marketplace.source?.repo === REPO) {
+        return marketplace.autoUpdate === true
+      }
+    }
+  } catch {
+    // File doesn't exist or can't be parsed
+  }
+  return false
 }
 
 export async function checkForUpdate(): Promise<UpdateStatus> {
@@ -44,6 +72,7 @@ export async function checkForUpdate(): Promise<UpdateStatus> {
     current: CURRENT_VERSION,
     latest,
     updateAvailable: latest !== null && isNewer(latest, CURRENT_VERSION),
+    autoUpdateEnabled: isAutoUpdateEnabled(),
   }
 }
 

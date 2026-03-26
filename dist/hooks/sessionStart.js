@@ -9,12 +9,16 @@ try {
 }
 catch { }
 try {
-    const { current, latest, updateAvailable } = await checkForUpdate();
+    const { current, latest, updateAvailable, autoUpdateEnabled } = await checkForUpdate();
     if (updateAvailable && latest) {
-        messages.push([
-            `[Peek] Update available: v${current} → v${latest}.`,
-            `       Run /peek:update to update, or enable auto-update: /plugin → Marketplaces → peek → Enable auto-update`,
-        ].join("\n"));
+        const lines = [`[Peek] Update available: v${current} → v${latest}.`];
+        if (autoUpdateEnabled) {
+            lines.push(`       Auto-update is enabled — restart to apply.`);
+        }
+        else {
+            lines.push(`       Run /peek:update to update, or enable auto-update: /plugin → Marketplaces → peek → Enable auto-update`);
+        }
+        messages.push(lines.join("\n"));
     }
 }
 catch { }
