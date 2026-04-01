@@ -5,7 +5,7 @@ export async function fetchAndFormatStats() {
     if (!config.showStats || !hasCredentials()) {
         return null;
     }
-    const result = await apiCall("/api/plugin/memories/stats", {}, { timeoutMs: 3000 });
+    const result = await apiCall("/api/plugin/memories/stats", { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }, { timeoutMs: 3000 });
     if (!result.ok) {
         return null;
     }

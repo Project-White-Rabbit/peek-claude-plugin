@@ -27,7 +27,7 @@ async function main() {
 
   const result = await apiCall<StatsResponse>(
     "/api/plugin/memories/stats",
-    {},
+    { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone },
     { timeoutMs: 5000 },
   )
 

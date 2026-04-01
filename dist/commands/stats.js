@@ -16,7 +16,7 @@ async function main() {
         console.log("Not authenticated. Run /peek:login first.");
         process.exit(1);
     }
-    const result = await apiCall("/api/plugin/memories/stats", {}, { timeoutMs: 5000 });
+    const result = await apiCall("/api/plugin/memories/stats", { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }, { timeoutMs: 5000 });
     if (!result.ok) {
         console.log(`Failed to fetch stats: ${result.error}`);
         process.exit(1);

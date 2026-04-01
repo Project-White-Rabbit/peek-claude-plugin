@@ -24,7 +24,7 @@ export async function fetchAndFormatStats(): Promise<string | null> {
 
   const result = await apiCall<StatsResponse>(
     "/api/plugin/memories/stats",
-    {},
+    { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone },
     { timeoutMs: 3000 },
   )
 
