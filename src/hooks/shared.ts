@@ -55,8 +55,9 @@ function formatMemories(memories: MemoryResponse["memories"]): string {
   const blocks: string[] = []
   for (const m of memories) {
     const blockLines: string[] = []
+    const num = m.memoryNumber != null ? `#${m.memoryNumber} ` : ""
     const cat = m.category ? ` [${m.category}]` : ""
-    blockLines.push(`${m.content}${cat}`)
+    blockLines.push(`${num}${m.content}${cat}`)
     if (m.events && m.events.length > 0) {
       for (const e of m.events.slice(0, 3)) {
         const countSuffix =
