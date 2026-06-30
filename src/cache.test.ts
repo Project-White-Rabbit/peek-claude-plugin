@@ -166,7 +166,7 @@ describe("trackInjectedIds", () => {
     fs.mkdirSync(cacheDir, { recursive: true })
     fs.writeFileSync(path.join(cacheDir, "session-injected.json"), "corrupt!")
 
-    // Should not throw — readSessionData returns empty default
+    // Should not throw - readSessionData returns empty default
     cacheModule.trackInjectedIds("session-1", ["m1"])
 
     const ids = cacheModule.getInjectedIds("session-1")

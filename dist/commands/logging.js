@@ -9,12 +9,12 @@ const level = process.argv[2];
 if (!level) {
     const current = getLoggingLevel();
     const desc = DESCRIPTIONS[current] ?? current;
-    console.log(`Current logging level: ${current} — ${desc}`);
+    console.log(`Current logging level: ${current} - ${desc}`);
     console.log();
     console.log("Available levels:");
     for (const l of LEVELS) {
         const marker = l === current ? " (current)" : "";
-        console.log(`  ${l} — ${DESCRIPTIONS[l]}${marker}`);
+        console.log(`  ${l} - ${DESCRIPTIONS[l]}${marker}`);
     }
     console.log();
     console.log("Usage: node logging.js <level>");
@@ -25,4 +25,4 @@ if (!LEVELS.includes(level)) {
     process.exit(1);
 }
 setLoggingLevel(level);
-console.log(`Peek logging set to ${level} — ${DESCRIPTIONS[level]}.`);
+console.log(`Peek logging set to ${level} - ${DESCRIPTIONS[level]}.`);

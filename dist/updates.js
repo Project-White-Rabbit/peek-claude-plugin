@@ -54,5 +54,5 @@ export async function checkForUpdate() {
     };
 }
 export function formatUpdateMessage(current, latest) {
-    return `v${latest} available — run /peek:update to update`;
+    return `v${latest} available - run /peek:update to update`;
 }

@@ -2,7 +2,7 @@ import { apiCall } from "../api.js";
 import { hasCredentials } from "../config.js";
 import { buildConversationContext, parseHookInput } from "../transcript.js";
 // Async hook: sends tool call data to server for tracking.
-// Fire-and-forget — no memory extraction, just saves the data.
+// Fire-and-forget - no memory extraction, just saves the data.
 async function main() {
     if (!hasCredentials()) {
         return;
@@ -21,5 +21,5 @@ async function main() {
     });
 }
 main().catch(() => {
-    // Silent failure — async hook, nobody is waiting
+    // Silent failure - async hook, nobody is waiting
 });

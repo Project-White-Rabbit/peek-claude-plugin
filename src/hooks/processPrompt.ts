@@ -39,5 +39,5 @@ async function main() {
 }
 
 main().catch(() => {
-  // Silent failure — async hook, nobody is waiting
+  // Silent failure - async hook, nobody is waiting
 })

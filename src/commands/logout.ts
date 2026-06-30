@@ -7,7 +7,7 @@ import {
 
 async function main() {
   if (!hasCredentials()) {
-    console.log("Not logged in — no credentials to remove.")
+    console.log("Not logged in - no credentials to remove.")
     return
   }
 

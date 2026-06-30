@@ -9,13 +9,13 @@ const subcommand = process.argv[2] as string | undefined
 
 if (subcommand === "on") {
   setShowStats(true)
-  console.log("Peek session stats enabled — weekly analytics shown at session start.")
+  console.log("Peek session stats enabled - weekly analytics shown at session start.")
   process.exit(0)
 }
 
 if (subcommand === "off") {
   setShowStats(false)
-  console.log("Peek session stats disabled — no analytics shown at session start.")
+  console.log("Peek session stats disabled - no analytics shown at session start.")
   process.exit(0)
 }
 

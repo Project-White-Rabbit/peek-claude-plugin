@@ -37,7 +37,7 @@ async function main() {
   console.log(`Callback server listening on port ${port}`)
 
   const server = http.createServer((req, res) => {
-    // CORS headers — the auth page sends a fetch from a different origin
+    // CORS headers - the auth page sends a fetch from a different origin
     res.setHeader("Access-Control-Allow-Origin", "*")
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
 

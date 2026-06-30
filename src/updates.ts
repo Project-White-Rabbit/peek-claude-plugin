@@ -80,5 +80,5 @@ export function formatUpdateMessage(
   current: string,
   latest: string,
 ): string {
-  return `v${latest} available — run /peek:update to update`
+  return `v${latest} available - run /peek:update to update`
 }
